@@ -1,0 +1,712 @@
+{
+  "items": [
+    {
+      "type": "basemap",
+      "peso": 1,
+      "nombre": "Mapas base",
+      "short_abstract": "",
+      "class": "",
+      "seccion": "mapasbase",
+      "capas": [
+        {
+          "titulo": "Argenmap",
+          "nombre": "argenmap",
+          "servicio": "tms",
+          "version": "1.0.0",
+          "attribution": "<a href='https://www.ign.gob.ar/AreaServicios/Argenmap/IntroduccionV2' target='_blank'>Instituto Geográfico Nacional</a> + <a href='https://www.osm.org/copyright' target='_blank'>OpenStreetMap</a>",
+          "host": "https://wms.ign.gob.ar/geoserver/gwc/service/tms/1.0.0/capabaseargenmap@EPSG%3A3857@png/{z}/{x}/{-y}.png",
+          "legendImg": "src/styles/images/argenmap.png",
+          "peso": 10,
+          "selected": true,
+          "zoom": {
+            "min": 3,
+            "max": 21,
+            "nativeMin": 3,
+            "nativeMax": 21
+          }
+        },
+        {
+          "titulo": "Argenmap gris",
+          "nombre": "argenmap_gris",
+          "servicio": "tms",
+          "version": "1.0.0",
+          "attribution": "<a href='https://www.ign.gob.ar/AreaServicios/Argenmap/IntroduccionV2' target='_blank'>Instituto Geográfico Nacional</a> + <a href='https://www.osm.org/copyright' target='_blank'>OpenStreetMap</a>",
+          "host": "https://wms.ign.gob.ar/geoserver/gwc/service/tms/1.0.0/mapabase_gris@EPSG%3A3857@png/{z}/{x}/{-y}.png",
+          "legendImg": "src/styles/images/argenmap-gris.png",
+          "peso": 20,
+          "zoom": {
+            "min": 3,
+            "max": 21,
+            "nativeMin": 3,
+            "nativeMax": 21
+          }
+        },
+        {
+          "titulo": "Imágenes satelitales Esri",
+          "nombre": "esri_imagery",
+          "servicio": "tms",
+          "version": "1.0.0",
+          "attribution": "Imágenes satelitales © Esri",
+          "host": "https://server.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+          "legendImg": "src/styles/images/esri.png",
+          "peso": 30,
+          "zoom": {
+            "min": 3,
+            "max": 17,
+            "nativeMin": 3,
+            "nativeMax": 17
+          }
+        },
+        {
+          "titulo": "Mapa topográfico Esri",
+          "nombre": "esri_imagery_t",
+          "servicio": "tms",
+          "version": "1.0.0",
+          "attribution": "Mapa topográfico © Esri",
+          "host": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}",
+          "legendImg": "src/styles/images/esrit.png",
+          "peso": 40,
+          "zoom": {
+            "min": 3,
+            "max": 8,
+            "nativeMin": 3,
+            "nativeMax": 8
+          }
+        },
+{
+          "titulo": "Mapa Esri Fondo Oceánico",
+          "nombre": "Fondo Oceánico",
+          "servicio": "tms",
+          "version": "1.0.0",
+          "attribution": "Mapa Fondo Oceánico © Esri",
+          "host": "https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}",
+          "legendImg": "src/styles/images/esrit.png",
+          "peso": 50,
+          "zoom": {
+            "min": 3,
+            "max": 8,
+            "nativeMin": 3,
+            "nativeMax": 8
+          }
+        }
+
+
+      ]
+    },
+
+ {
+
+"tab": {
+        "id": "Agua",
+        "searcheable": true,
+        "content": "Agua" 
+
+      },
+      "type": "wmslayer",
+      "peso":10,
+      "nombre": "Humedales",
+      "short_abstract": "Humedales de la Argentina",
+      "class": "",
+      "seccion": "h_agua",
+      "feature_info_format":"application/json",
+      "servicio": "wms",
+      "version": "1.3.0",      
+      "host": "https://geo-backend.inta.gob.ar/geoserver/wms",
+      "allowed_layers": [      
+        "geonode:region_3b_veglagaltoandinas_v2_1a859d3738e5cd8b18d48c9c4423a788",
+        "geonode:region_3a_vegaslagunaspuna_v2_36dd84b6728c478d150a3b612e259bb2",
+        "geonode:region_2_v2_8c083afd5ec3553fadb933a3b52ad637",
+        "geonode:region_1_humedalesmontanos_v2_ea182d56b07dafa08d22569f646a4439",
+        "geonode:region_4_humedalesmisioneros_v2681474bca679",
+        "geonode:region_5a_riosesterosrioparana_v2ffdad89446e6",
+        "geonode:region_5b_riachosesteroschacohumedo_v269ee49d4ac65",
+        "geonode:region_5c_malezalestembladeraleslitoralenos_v29b5ecc138f06",
+        "geonode:region_6a_riosarroyosvallesintermontanos_v2d91c07600617",
+        "geonode:region_6b_arroyosmallinessierrascentrales_v24540ed1e398c",
+        "geonode:region_6c_salinasdepresioncentral_v28095969286d7",
+        "geonode:region_7_humedalesmontecentral_v228dfd1b0f922",
+        "geonode:region_8a_lagunaspampahumeda__v2d4a911e215da",
+        "geonode:region_8b_lagunassalobrespampainterior_v214a224e72feb",
+        "geonode:region_9a_playasmarismascostabonaerense_v29b8f4e5f08f7",
+        "geonode:region_9b_playasmarismascostapatagonica_comba79eaa95809c",
+        "geonode:region_10b_lagunasvegtaspatagoniaextaandina_v2f67aa9e48992",
+        "geonode:region_10c_mallinesturberaspatagoniasur_v2cf24f015cc44",
+        "geonode:region_10a_lagoscursosaguamallinespatagonicos_v292635bff2e61"
+
+
+
+
+        
+       ]
+       
+
+    },
+
+
+
+
+
+   
+ {
+      
+      "tab": {
+        "id": "Suelos",
+        "searcheable": true,
+        "content": "Suelos"
+      },
+
+      "type": "wms",
+      "peso": 10,
+      "nombre": "Escala Nacional",
+      "short_abstract": "Suelos, Textura, Carbono, pH, SisINTA",
+      "class": "",
+      "seccion": "s_nacional",
+      "servicio": "wms",
+      "version": "1.3.0",
+      "feature_info_format":"application/json",
+      "host": "https://geo-backend.inta.gob.ar/geoserver/wms",
+      "allowed_layers": [ 
+        
+        "geonode:suelos_argentina_1_500" ,
+        
+        "geonode:Mapa_COS_Nacional"
+        
+       ]
+
+
+    },
+
+{
+      
+      "tab": {
+        "id": "Suelos",
+        "searcheable": true,
+        "content": "Suelos"
+      },
+
+      "type": "wms",
+      "peso": 70,
+      "nombre": "Escala Nacional",
+      "short_abstract": "Suelos, Textura, Carbono, pH, SisINTA",
+      "class": "",
+      "seccion": "s_nacional",
+      "servicio": "wms",
+      "version": "1.3.0",
+      "feature_info_format":"application/json",
+      "host": "https://geo-nodo05.inta.gob.ar/geoserver/wms",
+      "allowed_layers": [ 
+        
+        "geonode:texclass_0_15_con_mascara_a8f640b4c16411b2c134d1de0a29cc79",
+        "geonode:texclass_15_30_con_mascara_c63eeded54b6b2b5540007ee7d6f8ade",
+        "geonode:texclass_30_60_con_mascara_9654064cf709638813faeb3a54f6e9e1",
+        "geonode:texclass_60_100_con_mascara_676377cf2182b97bf62cfead3515bdf4",
+        "geonode:ph_0_30_nuevo_recorte_m_4d4cbbd459875375ae3e856e2870841f",
+        "geonode:ph_30_100_nuevo_recorte_m_cbccd7b512bb4f943ad9672e961bee3d",
+        "geonode:ocsmgha_ipcc_rf_jun18_con_m_a5f12e832f01dd12e17596c1f86a6c88"
+        
+       ]
+
+
+    },
+
+
+
+
+    {
+ 
+"tab": {
+        "id": "Suelos",
+        "searcheable": true,
+        "content": "Suelos"
+      },
+
+      "type": "wmslayer",
+      "peso": 70,
+      "nombre": "Región NOA",
+      "short_abstract": "Suelos, IP, Erosión hídrica, Geomorfología",
+      "class": "",
+      "seccion": "s_noa",
+      "servicio": "wms",
+      "version": "1.3.0",
+      "feature_info_format":"application/json",
+      "host": "https://geo-nodo01.inta.gob.ar/geoserver/wms",
+      "allowed_layers": [ 
+        
+        "geonode:asoc_fao_",
+        "geonode:suelo_jujuy_pj4326",
+        "geonode:suelos_mojotoro_2022_v2",
+        "geonode:vcalcha",
+        "geonode:galpon_miraflores4326",
+        "geonode:ar_miraflores_el_galpon",
+        "geonode:cu_miraflores_el_galpon",
+        "geonode:carta_suelos_valle_lerma_ll"
+        
+       ]
+
+           
+    },
+
+
+
+    
+
+    {
+
+"tab": {
+        "id": "Suelos",
+        "searcheable": true,
+        "content": "Suelos"
+      },
+
+
+      "type": "wms",
+      "peso": 100,
+     "nombre": "Región NEA",
+      "short_abstract": "Suelos, Lomadas",
+      "class": "",
+      "seccion": "s_nea",
+      "servicio": "wms",
+      "version": "1.3.0",
+      "host": ""
+      
+    },
+
+
+   
+
+
+ {
+"tab": {
+        "id": "Suelos",
+        "searcheable": true,
+        "content": "Suelos"
+      },
+
+
+
+
+      "type": "wms",
+      "peso": 70,
+      "nombre": "Región Pampeana",
+      "short_abstract": "Suelos, Geomorfología, Aptitud para riego, IP",
+      "class": "",
+      "seccion": "s_pampeana",
+      "servicio": "wms",
+      "version": "1.3.0",
+      "host": ""
+
+    },
+
+
+    {
+
+"tab": {
+        "id": "Suelos",
+        "searcheable": true,
+        "content": "Suelos"
+      },
+
+      "type": "wms",
+      "peso": 70,
+      "nombre": "Region Cuyana",
+      "short_abstract": "Suelos ",
+      "class": "",
+      "seccion": "s_cuyo",
+      "servicio": "wms",
+      "version": "1.3.0",
+      
+      "host": ""
+       
+    }
+,
+    {
+
+"tab": {
+        "id": "Suelos",
+        "searcheable": true,
+        "content": "Suelos"
+      },
+
+      "type": "wmslayer",
+      "peso": 70,
+      "nombre": "Region Patagónica",
+      "short_abstract": "Suelos",
+      "class": "",
+      "seccion": "s_patagonia",
+      "servicio": "wms",
+      "version": "1.3.0",
+      "host": ""
+    }
+,
+    
+
+
+
+
+
+   
+
+{
+
+"tab": {
+        "id": "Clima",
+        "searcheable": true,
+        "content": "Clima y Meteorología" 
+
+      },
+      "type": "wmslayer",
+      "peso":10,
+      "nombre": "Precipitación",
+      "short_abstract": "Precipitaciones",
+      "class": "",
+      "seccion": "c_precip",
+        "feature_info_format":"application/json",
+      "servicio": "wms",
+      "version": "1.3.0",
+      
+       "host": "https://geo-nodo01.inta.gob.ar/geoserver/wms",
+      "allowed_layers": [ 
+        
+        "geonode:01_pp_ba57f25af7aebf4d0eb378552ed2daaa",
+        "geonode:02_pp_96e4e2d11636fafd131005ceac02133e",
+        "geonode:03_pp_7241fb309c4814f1d3e4824b4ea8d37e",
+        "geonode:04pp_d5fcacdb2657ff6b53c0b47776368c41",
+        "geonode:05_pp_clip_3a04b4cce37a9c1da3b5ee08cd5f9953",
+        "geonode:06_pp_305265eb62a3bac12161f21d743086c2",
+        "geonode:07_pp_14afd7fae0db0be38c564323d8604264",
+        "geonode:08_pp_05a96cff3fc162ef47c8603cdc56a591",
+        "geonode:09_pp_c6aca087c42cb51270a02fed8b7ec9d0",
+        "geonode:10_pp_c09ca84ecf4daf79c0aa0a43af16c11d",
+        "geonode:11_pp_58ec4cc6f071eff4a88f8664adf6e04b",
+        "geonode:12_pp_b4febea5216bfab635e7ef38c8912151",
+        "geonode:precipitacion_anual_dc870cab9d9f2e51c70015aab0a84869",
+        "geonode:pluviometros_vl"
+         
+
+        
+       ]
+
+    },
+{
+
+"tab": {
+        "id": "Agricultura",
+        "searcheable": true,
+        "content": "Agricultura" 
+
+      },
+      "type": "wmslayer",
+      "peso":50,
+      "nombre": "Cultivos extensivos",
+      "short_abstract": "Cultivos de invierno y verano, intensidad, secuencia ",
+      "class": "",
+      "seccion": "agr_ext",
+      "feature_info_format":"application/json",
+      "servicio": "wms",
+      "version": "1.3.0",      
+      "host": "https://geo-nodo02.inta.gob.ar/geoserver/wms",
+      "allowed_layers": [        
+       
+        "geonode:cana_2025_inta_rides"      
+        
+       ]
+
+    },
+
+
+
+
+{
+
+"tab": {
+        "id": "Agricultura",
+        "searcheable": true,
+        "content": "Agricultura" 
+
+      },
+      "type": "wmslayer",
+      "peso":70,
+      "nombre": "Cultivos extensivos",
+      "short_abstract": "Cultivos de invierno y verano, intensidad, secuencia ",
+      "class": "",
+      "seccion": "agr_ext",
+      "feature_info_format":"application/json",
+      "servicio": "wms",
+      "version": "1.3.0",      
+      "host": "https://geo-backend.inta.gob.ar/geoserver/wms",
+      "allowed_layers": [ 
+        
+        "geonode:mnc_verano2024_f300268fd112b0ec3ef5f731edb78882",
+        "geonode:mnc_invierno_2019",
+        "geonode:MNC_invierno2021",
+        "geonode:MNC_invierno2022",
+        "geonode:mnc_invierno2023_d86dd2aa0b678a011b89830f77cec883",
+        "geonode:mnc_2018_2019_V1R1",
+        "geonode:mnc_verano_2020",
+        "geonode:mnc_verano2021",
+        "geonode:MNC_verano2022",
+        "geonode:MNC_verano_2023"      
+        
+       ]
+
+    },
+
+{
+
+"tab": {
+        "id": "Agricultura",
+        "searcheable": true,
+        "content": "Agricultura" 
+
+      },
+      "type": "wmslayer",
+      "peso":90,
+      "nombre": "Cultivos extensivos",
+      "short_abstract": "Cultivos de invierno y verano, intensidad, secuencia ",
+      "class": "",
+      "seccion": "agr_ext",
+      "feature_info_format":"application/json",
+      "servicio": "wms",
+      "version": "1.3.0",      
+      "host": "https://geo-nodo05.inta.gob.ar/geoserver/wms",
+      "allowed_layers": [ 
+        
+        "geonode:nro_cultivos_qgis_merge_hc_b3701746b67214762864f60ee3112b0f",
+        "geonode:numero_cereales_fafef34c656359ff52417d29bff95b36",
+        "geonode:numero_s1_29f49a97991266889e6282c87c043b49",      
+        "geonode:rotaciones_245adf946d8e6458bcce0e19a9e3e33c"
+       
+       ]
+
+    },
+
+{
+
+"tab": {
+        "id": "Agricultura",
+        "searcheable": true,
+        "content": "Agricultura" 
+
+      },
+      "type": "wmslayer",
+      "peso":100,
+      "nombre": "Frutales",
+      "short_abstract": "Cítricos, de carozo, de pepitas",
+      "class": "",
+      "seccion": "agr_frut",
+      "feature_info_format":"application/json",
+      "servicio": "wms",
+      "version": "1.3.0",      
+      "host": "https://geo-nodo02.inta.gob.ar/geoserver/wms",
+      "allowed_layers": [       
+       
+        "geonode:citrustucuman2024",
+        "geonode:citrus_tucuman2025"
+       ]
+
+    },
+{
+
+"tab": {
+        "id": "Agricultura",
+        "searcheable": true,
+        "content": "Agricultura" 
+
+      },
+      "type": "wmslayer",
+      "peso":100,
+      "nombre": "Frutales",
+      "short_abstract": "Cítricos, de carozo, de pepitas",
+      "class": "",
+      "seccion": "agr_frut",
+      "feature_info_format":"application/json",
+      "servicio": "wms",
+      "version": "1.3.0",      
+      "host": "https://geo-nodo01.inta.gob.ar/geoserver/wms",
+      "allowed_layers": [       
+       
+        "geonode:citrus2020_saltajujuy_v2",
+        "geonode:salta_citricos_2025_v10",
+        "geonode:jujuy_citricos_2025_10_07_v01"
+        
+       ]
+
+    },
+
+
+
+
+
+
+{
+
+"tab": {
+        "id": "Agricultura",
+        "searcheable": true,
+        "content": "Agricultura" 
+
+      },
+      "type": "wmslayer",
+      "peso":110,
+      "nombre": "Hortalizas",
+      "short_abstract": "Cultivos hortícolas",
+      "class": "",
+      "seccion": "agr_hort",
+      "feature_info_format":"application/json",
+      "servicio": "wms",
+      "version": "1.3.0",      
+      "host": "https://geo-nodo05.inta.gob.ar/geoserver/wms",
+      "allowed_layers": [       
+       
+        "geonode:papasur2024_2025_f"
+       ]
+
+    },
+
+{
+
+"tab": {
+        "id": "Agricultura",
+        "searcheable": true,
+        "content": "Agricultura" 
+
+      },
+      "type": "wmslayer",
+      "peso":110,
+      "nombre": "Hortalizas",
+      "short_abstract": "Cultivos hortícolas",
+      "class": "",
+      "seccion": "agr_hort",
+      "feature_info_format":"application/json",
+      "servicio": "wms",
+      "version": "1.3.0",      
+      "host": "https://geo-nodo02.inta.gob.ar/geoserver/wms",
+      "allowed_layers": [       
+       
+        "geonode:frutilla2024_19ago2024b"
+       ]
+
+    },
+
+
+{
+
+"tab": {
+        "id": "Riesgos",
+        "searcheable": true,
+        "content": "Riesgos" 
+
+      },
+      "type": "wmslayer",
+      "peso":65,
+      "nombre": "Inundaciones",
+      "short_abstract": "",
+      "class": "",
+      "seccion": "riesgo_i",
+      "feature_info_format":"application/json",
+      "servicio": "wms",
+      "version": "1.3.0",      
+      "host": "https://geo-backend.inta.gob.ar/geoserver/wms",
+      "allowed_layers": [ 
+        
+        "geonode:ire_2017"
+        
+       ]
+
+    },
+
+{
+
+"tab": {
+        "id": "Ordenamiento",
+        "searcheable": true,
+        "content": "Ordenamiento Territorial" 
+
+      },
+      "type": "wmslayer",
+      "peso":100,
+      "nombre": "Uso y cobertura",
+      "short_abstract": "",
+      "class": "",
+      "seccion": "orden_u",
+      "feature_info_format":"application/json",
+      "servicio": "wms",
+      "version": "1.3.0",      
+      "host": "https://geo-backend.inta.gob.ar/geoserver/wms",
+      "allowed_layers": [ 
+        
+        "geonode:lccs_n3_2007"
+        
+       ]
+
+    },
+
+{
+
+"tab": {
+        "id": "ecoysoc",
+        "searcheable": false,
+        "content": "Economía y sociologia" 
+
+      },
+      "type": "wmslayer",
+      "peso":65,
+      "nombre": "gfhgfhgfhghg",
+      "short_abstract": "",
+      "class": "",
+      "seccion": "eco1",
+      "feature_info_format":"application/json",
+      "servicio": "wms",
+      "version": "1.3.0",      
+      "host": "https://geo-backend.inta.gob.ar/geoserver/wms",
+      "allowed_layers": [ 
+        
+        "geonode:ire_2017"
+        
+       ]
+
+    },
+
+{
+
+"tab": {
+        "id": "biod",
+        "searcheable": false,
+        "content": "Biodiversidad" 
+
+      },
+      "type": "wmslayer",
+      "peso":65,
+      "nombre": "jjyuewhtyjtrs",
+      "short_abstract": "",
+      "class": "",
+      "seccion": "bio",
+      "feature_info_format":"application/json",
+      "servicio": "wms",
+      "version": "1.3.0",      
+      "host": "https://geo-backend.inta.gob.ar/geoserver/wms",
+      "allowed_layers": [ 
+        
+        "geonode:ire_2017"
+        
+       ]
+
+    }
+
+
+
+  ],
+
+
+  
+  
+
+"template": "argenmap-leaflet-idera-tpl",
+  "template_feature_info_exception": [
+    "gid",
+    "id",
+    "entidad"
+  ]
+
+
+}

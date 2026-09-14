@@ -1,0 +1,42 @@
+#iconPDF {
+  font-size: 16px;
+    line-height: inherit;
+  }
+  .iconPDF-container {
+  font-size: 16px;
+  line-height: inherit;
+}
+/*******************************
+Print
+*******************************/
+@media print {
+  .navbar,
+  .sidebar,
+  .menu-container,
+  /* .leaflet-control:not(.leaflet-control-attribution > a:nth-child(n + 2)), */
+  .leaflet-control:not([class*="leaflet-control-better-scale"]),
+  #sidebar,
+  #zoom-level,
+  #btn-logout,
+  #loadLayersModal,
+  #developerLogo {
+    display: none !important;
+  }
+  div.leaflet-bottom.leaflet-left {
+    display: block;
+    position: absolute;
+    top: 10px;
+    left: 0;
+    z-index: 10001;
+  }
+  #mapa {
+    display: block;
+    width: 100dvw;
+    height: 100dvh;
+    position: absolute;
+    top: 0;
+    left: 0;
+    margin: 0;
+    z-index: 10000;
+  }
+}
