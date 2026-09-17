@@ -1618,20 +1618,30 @@ function createLayerByType(geoJSON, groupName) {
     layer = createLayerMultilinestring(geoJSON, groupName, layer);
   }
   if (type === "multipolygon") {
-    layer = createLayerMultilinestring(geoJSON, layer);
+    layer = createLayerMultipolygon(geoJSON, layer, options);
+  }
+  if (type === "geometrycollection") {
+    layer = L.geoJSON(geoJSON, options);
+    layer.type = "polygon";
   }
   /* Guardar propiedades de editable label */
   /* console.log(geoJSON.properties.type) */
-  if (geoJSON.properties.type !== "label") {
+  if (layer && (!geoJSON.properties || geoJSON.properties.type !== "label")) {
     layer.id = groupName;
     layer.data = { geoJSON };
   }
   return layer;
 }
 
-function createLayerMultilinestring(geoJSON, layer) {
-  const reversedCoords = reverseMultipleCoords(geoJSON.geometry.coordinates[0]);
-  layer = L.polygon(reversedCoords);
+function createLayerMultipolygon(geoJSON, layer, options) {
+  try {
+    const geoLayer = L.geoJSON(geoJSON, options);
+    const layers = geoLayer.getLayers();
+    layer = layers[0] || geoLayer;
+  } catch (e) {
+    const reversedCoords = reverseMultipleCoords(geoJSON.geometry.coordinates);
+    layer = L.polygon(reversedCoords, options);
+  }
   layer.type = "polygon";
   return layer;
 }
@@ -1873,11 +1883,12 @@ function _addLayerToAllGroups(layer, groupName) {
   let type = layer.type;
   drawnItems.addLayer(layer);
 
-  mapa.editableLayers[type].forEach((lyr) => {
-    if (lyr.id !== layer.id) {
+  if (mapa && mapa.editableLayers && mapa.editableLayers[type]) {
+    const exists = mapa.editableLayers[type].some((lyr) => lyr.id === layer.id);
+    if (!exists) {
       mapa.editableLayers[type].push(layer);
     }
-  });
+  }
 
   if (groupName) {
     if (mapa.groupLayers[groupName] === undefined) {

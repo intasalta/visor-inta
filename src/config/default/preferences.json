@@ -126,6 +126,11 @@
         "name": "Perfil de Elevación",
         "geoprocess": "elevationProfile",
         "namePrefix": "profile_"
+      },
+      {
+        "name": "Recortar capa",
+        "geoprocess": "clipLayer",
+        "namePrefix": "recorte_"
       }
     ]
   },

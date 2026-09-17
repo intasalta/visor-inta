@@ -452,6 +452,10 @@ function addProcessfromFiles(e, sectionName, typeName, counter) {
       counter = counterElevProfile;
       counterElevProfile++;
       break;
+    case geoProcessingManager.GEOPROCESS.clipLayer:
+      counter = counterClip;
+      counterClip++;
+      break;
     default:
       break;
   }

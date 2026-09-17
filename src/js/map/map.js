@@ -586,6 +586,11 @@ $("body").on("pluginLoad", function (event, plugin) {
                       "./src/js/components/geoprocessing/IHeight.js",
                     );
                   }
+                  if (process.geoprocess === "clipLayer") {
+                    app._loadScript(
+                      "./src/js/components/geoprocessing/IClipLayer.js",
+                    );
+                  }
                   geoProcessingManager.getNewProcessPrefix();
                 });
               });
@@ -2810,6 +2815,10 @@ $("body").on("pluginLoad", function (event, plugin) {
               {
                 id: geoProcessingManager.GEOPROCESS.elevationProfile,
                 process: "elevationProfile",
+              },
+              {
+                id: geoProcessingManager.GEOPROCESS.clipLayer,
+                process: "clipLayer",
               },
             ];
 

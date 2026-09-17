@@ -7,7 +7,8 @@ let isSelectionDrawingActive = false;
 let counterContour = 0,
   counterHeight = 0,
   counterBuffer = 0,
-  counterElevProfile = 0; //soon to be moved to their respective class
+  counterElevProfile = 0,
+  counterClip = 0; //soon to be moved to their respective class
 
 class Geoprocessing {
   formContainer = null;
@@ -19,11 +20,13 @@ class Geoprocessing {
   fieldsToReferenceLayers = [];
   editableLayer_name = null;
   _namePrefix = null;
+  clipLayerInstance = null;
   GEOPROCESS = {
     contour: "curvas_de_nivel_",
     waterRise: "cota_",
     buffer: "area_de_influencia_",
     elevationProfile: "perfil_de_elevacion_",
+    clipLayer: "recorte_",
   };
 
   svgZoomStyle(zoom) {
@@ -350,6 +353,60 @@ class Geoprocessing {
 
         break;
       }
+      case "clipLayer": {
+        btn_modal_loading = false;
+        let layername = this.namePrefix + counterClip;
+        counterClip++;
+
+        let resultGeoJson = mapa.createLayerFromGeoJSON(result, layername);
+        addLayerToAllGroups(resultGeoJson, layername);
+
+        if (mapa.editableLayers.polygon) {
+          mapa.editableLayers.polygon.forEach((lyr) => {
+            if (lyr.id === layername) {
+              lyr._uneditable = true;
+            }
+          });
+        }
+
+        const download = () => {
+          const blob = new Blob([JSON.stringify(result, null, 2)], {
+            type: "application/geo+json",
+          });
+          downloadBlob(blob, `${layername}.geojson`);
+        };
+
+        addedLayers.push({
+          id: layername,
+          layer: result,
+          name: layername,
+          file_name: layername,
+          type: layerType,
+          isActive: true,
+          download: download,
+          section: sectionName,
+        });
+        menu_ui.addFileLayer(
+          sectionName,
+          layerType,
+          layername,
+          layername,
+          layername,
+          true,
+        );
+        updateNumberofLayers(sectionName);
+
+        // Centrar mapa en la capa recortada si tiene geometrías
+        try {
+          if (mapa.groupLayers[layername] && mapa.groupLayers[layername].length > 0) {
+            mapa.centerLayer(result);
+          }
+        } catch (e) {
+          console.warn("No se pudo centrar la capa de recorte automáticamente", e);
+        }
+
+        break;
+      }
     }
     this.resetHeightLayerColor();
     document.getElementById("select-process").selectedIndex = 0;
@@ -410,6 +467,9 @@ class Geoprocessing {
     }
     if (this.geoprocessId === "elevationProfile") {
       this.checkPolyline(event);
+    }
+    if (this.geoprocessId === "clipLayer") {
+      this.checkShapeForClip(event);
     }
   }
 
@@ -657,6 +717,115 @@ class Geoprocessing {
     }
   }
 
+  checkShapeForClip(event) {
+    if (event === "add-layer" || event === "edit-layer") {
+      let drawnShape = null;
+      if (mapa && mapa.editableLayers) {
+        if (mapa.editableLayers.polygon && mapa.editableLayers.polygon.length > 0) {
+          drawnShape = mapa.editableLayers.polygon.find(
+            (lyr) => lyr && lyr.id && String(lyr.id).includes("selection_"),
+          );
+          if (!drawnShape) {
+            drawnShape = mapa.editableLayers.polygon[mapa.editableLayers.polygon.length - 1];
+          }
+        }
+        if (!drawnShape && mapa.editableLayers.rectangle && mapa.editableLayers.rectangle.length > 0) {
+          drawnShape = mapa.editableLayers.rectangle.find(
+            (lyr) => lyr && lyr.id && String(lyr.id).includes("selection_"),
+          );
+          if (!drawnShape) {
+            drawnShape = mapa.editableLayers.rectangle[mapa.editableLayers.rectangle.length - 1];
+          }
+        }
+      }
+
+      if (drawnShape) {
+        const hasLayer = document.getElementById("select-capa") && document.getElementById("select-capa").value;
+        if (hasLayer) {
+          $("#ejec_gp").removeClass("ag-btn-disabled");
+        }
+        $("#drawPolygonBtn").removeClass("ag-btn-disabled");
+        $("#drawRectangleBtn").removeClass("ag-btn-disabled");
+        $("#msgClipStatus")
+          .html("Polígono de corte listo. Puede ejecutar el recorte.")
+          .removeClass("hidden")
+          .css("color", "green");
+      }
+    } else if (event === "delete-layer") {
+      $("#ejec_gp").addClass("ag-btn-disabled");
+      $("#drawPolygonBtn").removeClass("ag-btn-disabled");
+      $("#drawRectangleBtn").removeClass("ag-btn-disabled");
+      $("#msgClipStatus")
+        .html("Dibuje un polígono o rectángulo sobre el área a recortar.")
+        .removeClass("hidden")
+        .css("color", "#333");
+    }
+  }
+
+  checkLayersForClip() {
+    let hasVectorLayer = false;
+    const select = document.getElementById("select-capa");
+
+    // If select is empty, try to populate from gestorMenu.activeLayers directly
+    if (select && select.options.length <= 1 && typeof gestorMenu !== "undefined" && gestorMenu.activeLayers) {
+      const existingValues = new Set(
+        Array.from(select.options).map((o) => o.value).filter(Boolean)
+      );
+      gestorMenu.activeLayers.forEach((layerName) => {
+        if (gestorMenu.availableBaseLayers && gestorMenu.availableBaseLayers.includes(layerName)) return;
+        if (typeof gestorMenu.layerIsWmts === "function" && gestorMenu.layerIsWmts(layerName)) return;
+        const parts = layerName.split(":");
+        const isRaster = parts.length === 2 && parts[1].length > 40;
+        if (!isRaster && !existingValues.has(layerName)) {
+          let title = layerName;
+          try {
+            const ld = gestorMenu.getLayerData(layerName);
+            if (ld && ld.title) title = ld.title;
+          } catch (e) {}
+          const opt = document.createElement("option");
+          opt.value = layerName;
+          opt.text = title;
+          select.appendChild(opt);
+          existingValues.add(layerName);
+        }
+      });
+    }
+
+    if (select && select.options && select.options.length > 1) {
+      hasVectorLayer = true;
+      // Auto-select the first real layer if nothing is selected
+      if (!select.value || select.selectedIndex <= 0) {
+        select.selectedIndex = 1;
+      }
+    }
+
+    if (hasVectorLayer) {
+      $("#msgNoVectorLayer").addClass("hidden");
+      $("#drawPolygonBtn").removeClass("ag-btn-disabled");
+      $("#drawRectangleBtn").removeClass("ag-btn-disabled");
+
+      // Enable execute button if a shape is already drawn
+      let drawnShape = null;
+      if (this.geoprocessing && typeof this.geoprocessing.getDrawnShape === "function") {
+        drawnShape = this.geoprocessing.getDrawnShape();
+      } else if (mapa && mapa.editableLayers) {
+        if (mapa.editableLayers.polygon && mapa.editableLayers.polygon.length > 0) {
+          drawnShape = mapa.editableLayers.polygon[mapa.editableLayers.polygon.length - 1];
+        } else if (mapa.editableLayers.rectangle && mapa.editableLayers.rectangle.length > 0) {
+          drawnShape = mapa.editableLayers.rectangle[mapa.editableLayers.rectangle.length - 1];
+        }
+      }
+      if (drawnShape) {
+        $("#ejec_gp").removeClass("ag-btn-disabled");
+      }
+    } else {
+      $("#msgNoVectorLayer").removeClass("hidden");
+      $("#drawPolygonBtn").addClass("ag-btn-disabled");
+      $("#drawRectangleBtn").addClass("ag-btn-disabled");
+      $("#ejec_gp").addClass("ag-btn-disabled");
+    }
+  }
+
   buildOptionFormMessages(sliderLayer) {
     //Contour & Buffer Rectangle Message
     let rectSizeMsg = document.createElement("div");
@@ -732,6 +901,23 @@ class Geoprocessing {
       //Hide drawRectangle for elevationProfile
       document.getElementById("drawRectangleBtn").classList.add("hidden");
     }
+
+    //clipLayer
+    else if (this.geoprocessId === "clipLayer") {
+      let clipStatusMsg = document.createElement("div");
+      clipStatusMsg.id = "msgClipStatus";
+      clipStatusMsg.innerHTML = "Dibuje un polígono o rectángulo sobre el área a recortar.";
+      clipStatusMsg.style = "margin: 10px 0; font-size: 13px; color: #555;";
+      document.getElementsByClassName("form")[1].appendChild(clipStatusMsg);
+
+      let msgNoVectorLayer = document.createElement("div");
+      msgNoVectorLayer.innerHTML = "No hay capas vectoriales activas. Active una capa en el menú de capas.";
+      msgNoVectorLayer.id = "msgNoVectorLayer";
+      msgNoVectorLayer.style = "color: #d9534f; font-weight: bold; margin: 10px 0;";
+      document.getElementsByClassName("form")[1].appendChild(msgNoVectorLayer);
+
+      this.checkLayersForClip();
+    }
   }
 
   buildOptionForm(fields) {
@@ -803,15 +989,92 @@ class Geoprocessing {
                     }
                   });
                 }
+              } else if (this.geoprocessId === "clipLayer") {
+                let layerTitle;
+                const addedLayerNames = new Set();
+
+                // Primary: getAllActiveLayers() from Leaflet layers
+                getAllActiveLayers().forEach((layer) => {
+                  if (layer && gestorMenu.layerIsWmts(layer.name) == false) {
+                    const parts = layer.name.split(":");
+                    const isRaster = parts.length === 2 && parts[1].length > 40;
+                    if (!isRaster) {
+                      try {
+                        const ld = gestorMenu.getLayerData(layer.name);
+                        layerTitle = (ld && ld.title) ? ld.title : layer.name;
+                      } catch (e) {
+                        layerTitle = layer.name;
+                      }
+                      if (!addedLayerNames.has(layer.name)) {
+                        addedLayerNames.add(layer.name);
+                        options.push({
+                          value: layer.name,
+                          text: layerTitle,
+                        });
+                      }
+                    }
+                  }
+                });
+
+                // Fallback: gestorMenu.activeLayers directly (when layersDataForWfs not yet populated)
+                if (options.length <= 1 && typeof gestorMenu !== "undefined" && gestorMenu.activeLayers) {
+                  gestorMenu.activeLayers.forEach((layerName) => {
+                    if (gestorMenu.availableBaseLayers && gestorMenu.availableBaseLayers.includes(layerName)) return;
+                    if (typeof gestorMenu.layerIsWmts === "function" && gestorMenu.layerIsWmts(layerName)) return;
+                    const parts = layerName.split(":");
+                    const isRaster = parts.length === 2 && parts[1].length > 40;
+                    if (!isRaster && !addedLayerNames.has(layerName)) {
+                      addedLayerNames.add(layerName);
+                      let title = layerName;
+                      try {
+                        const ld = gestorMenu.getLayerData(layerName);
+                        if (ld && ld.title) title = ld.title;
+                      } catch (e) {}
+                      options.push({ value: layerName, text: title });
+                    }
+                  });
+                }
+
+                // addedLayers (user-uploaded files)
+                addedLayers.forEach((lyr) => {
+                  if (
+                    lyr.isActive &&
+                    (lyr.type === "WMS" ||
+                      lyr.type === "geoprocess" ||
+                      lyr.type === "geojson" ||
+                      lyr.type === "shp" ||
+                      lyr.type === "kml")
+                  ) {
+                    const lyrId = lyr.name || lyr.id;
+                    if (!addedLayerNames.has(lyrId)) {
+                      addedLayerNames.add(lyrId);
+                      options.push({
+                        value: lyrId,
+                        text:
+                          lyr.title ||
+                          (lyr.layer && lyr.layer.title) ||
+                          lyr.name ||
+                          lyr.id,
+                      });
+                    }
+                  }
+                });
               }
+            }
+
+            if (field.options && Array.isArray(field.options)) {
+              options.length = 0;
+              field.options.forEach((opt) => options.push(opt));
             }
 
             //Select layer in "Capa"
             const select = this.optionsForm.addElement("select", selectId, {
-              title: field.name,
+              title: field.title || field.name,
               events: {
                 change: (element) => {
-                  if (this.geoprocessId === "contour") {
+                  if (this.geoprocessId === "clipLayer") {
+                    this.checkLayersForClip();
+                  } else if (this.geoprocessId === "contour") {
                     if (!element.value) return;
                     const layer = mapa.getEditableLayer(element.value);
                     mapa.centerLayer(layer);
@@ -935,28 +1198,30 @@ class Geoprocessing {
     });
 
     //Draw Rectangle Button
-    let rectangleBtn;
-    if (this.geoprocessId === "contour") {
-      rectangleBtn = "Dibujar Rectángulo";
-    } else if (this.geoprocessId === "buffer") {
-      rectangleBtn = "Selección de Área";
+    if (this.geoprocessId === "contour" || this.geoprocessId === "buffer") {
+      let rectangleBtn =
+        this.geoprocessId === "contour"
+          ? "Dibujar Rectángulo"
+          : "Selección de Área";
+      this.optionsForm.addButton(
+        rectangleBtn,
+        () => {
+          let drawingRectangle = new L.Draw.Rectangle(mapa);
+          $("#drawRectangleBtn").addClass("ag-btn-disabled");
+          drawingRectangle.enable();
+          this.checkRectangleArea("add-layer");
+          isSelectionDrawingActive = true;
+        },
+        "drawRectangleBtn",
+      );
     }
-    this.optionsForm.addButton(
-      rectangleBtn,
-      () => {
-        let drawingRectangle = new L.Draw.Rectangle(mapa);
-        $("#drawRectangleBtn").addClass("ag-btn-disabled");
-        drawingRectangle.enable();
-        this.checkRectangleArea("add-layer");
-        isSelectionDrawingActive = true;
-      },
-      "drawRectangleBtn",
-    );
 
     //Execute Button
+    let executeLabel =
+      this.geoprocessId === "clipLayer" ? "Recortar y Descargar" : "Ejecutar";
 
     this.optionsForm.addButton(
-      "Ejecutar",
+      executeLabel,
       () => {
         if (this.geoprocessId === "buffer") {
           this.executeBuffer();
@@ -964,6 +1229,13 @@ class Geoprocessing {
           //this.executeElevationProfile();
           let perfilTopografico = new IElevationProfile();
           perfilTopografico.executeElevationProfile();
+        } else if (this.geoprocessId === "clipLayer") {
+          if (this.clipLayerInstance) {
+            this.clipLayerInstance.executeClip();
+          } else {
+            let clip = new IClipLayer();
+            clip.executeClip();
+          }
         } else {
           this.executeGeoprocess(formFields);
         }
@@ -1182,6 +1454,16 @@ class Geoprocessing {
               }, 500);
             }
           }
+          if (this.geoprocessId == "clipLayer") {
+            setTimeout(() => {
+              let select = document.getElementById("select-capa");
+              if (select && select.options.length > 1) {
+                select.selectedIndex = 1;
+                $(select).change();
+              }
+              this.checkLayersForClip();
+            }, 300);
+          }
           if (this.geoprocessId !== "waterRise") {
             this.resetHeightLayerColor();
           }
@@ -1195,12 +1477,18 @@ class Geoprocessing {
             elevationProfile: IElevationProfile,
             waterRise: GeoserviceFactory.WaterRise,
             buffer: GeoserviceFactory.Contour,
+            clipLayer: typeof IClipLayer !== "undefined" ? IClipLayer : null,
           };
 
-          this.geoprocessing = new this.process[this.geoprocessId](
-            item.baseUrl,
-            item.layer,
-          );
+          if (this.geoprocessId === "clipLayer") {
+            this.clipLayerInstance = new IClipLayer();
+            this.geoprocessing = this.clipLayerInstance;
+          } else {
+            this.geoprocessing = new this.process[this.geoprocessId](
+              item.baseUrl,
+              item.layer,
+            );
+          }
           this.buildOptionForm(this.geoprocessing.getFields());
           //this.namePrefix = item.namePrefix;
         },
@@ -1247,7 +1535,14 @@ class Geoprocessing {
     let select = document.getElementById("select-capa"),
       option = document.createElement("option");
     option.value = layerName;
-    option.innerHTML = gestorMenu.getLayerData(layerName).title;
+    try {
+      const ld = typeof gestorMenu !== "undefined" && typeof gestorMenu.getLayerData === "function"
+        ? gestorMenu.getLayerData(layerName)
+        : null;
+      option.innerHTML = (ld && ld.title) ? ld.title : layerName;
+    } catch (e) {
+      option.innerHTML = layerName;
+    }
 
     if (layerName.includes("polyline") && select !== null) {
       if (addToList) {
@@ -1291,6 +1586,28 @@ class Geoprocessing {
             $("#ejec_gp").addClass("ag-btn-disabled");
           }
         }
+      }
+    }
+
+    if (select && this.geoprocessId === "clipLayer") {
+      const parts = layerName.split(":");
+      const isRaster = parts.length === 2 && parts[1].length > 40;
+      if (addToList && gestorMenu.layerIsWmts(layerName) == false && !isRaster) {
+        let exists = false;
+        for (let i = 0; i < select.length; i++) {
+          if (select[i].value === layerName) exists = true;
+        }
+        if (!exists && option.innerHTML !== "undefined") {
+          select.appendChild(option);
+          this.checkLayersForClip();
+        }
+      } else if (!addToList) {
+        for (let i = 0; i < select.length; i++) {
+          if (select[i].value === layerName) {
+            select[i].remove();
+          }
+        }
+        this.checkLayersForClip();
       }
     }
   }
