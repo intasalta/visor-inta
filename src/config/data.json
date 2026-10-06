@@ -74,19 +74,19 @@
           }
         },
         {
-        "titulo": "Google Hybrid",
-        "nombre": "google_hybrid",
-        "servicio": "tms",
-        "version": "1.0.0",
-        "attribution": "Map data © Google",
-        "host": "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
-        "legendImg": "src/styles/images/esri.png",
-        "peso": 30,
-        "zoom": {
-          "min": 0,
-          "max": 20,
-          "nativeMin": 0,
-          "nativeMax": 20
+          "titulo": "Google Hybrid",
+          "nombre": "google_hybrid",
+          "servicio": "tms",
+          "version": "1.0.0",
+          "attribution": "Map data © Google",
+          "host": "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
+          "legendImg": "src/styles/images/esri.png",
+          "peso": 30,
+          "zoom": {
+            "min": 0,
+            "max": 20,
+            "nativeMin": 0,
+            "nativeMax": 20
           }
         },
         {
@@ -107,13 +107,11 @@
         }
       ]
     },
-    
     {
       "tab": {
         "id": "Capas",
         "searcheable": true,
-        "content": "Capas" 
-
+        "content": "Capas"
       },
       "type": "wms",
       "peso": 70,
@@ -123,10 +121,10 @@
       "seccion": "Suelos",
       "servicio": "wms",
       "version": "1.3.0",
-      "feature_info_format":"application/json",
+      "feature_info_format": "application/json",
       "host": "https://geo-nodo05.inta.gob.ar/geoserver/wms",
-      "allowed_layers": [ 
-        
+      "allowed_layers": [
+        "geonode:mapa_de_suelos_la_esperanza_latlong",
         "geonode:texclass_0_15_con_mascara_a8f640b4c16411b2c134d1de0a29cc79",
         "geonode:texclass_15_30_con_mascara_c63eeded54b6b2b5540007ee7d6f8ade",
         "geonode:texclass_30_60_con_mascara_9654064cf709638813faeb3a54f6e9e1",
@@ -143,43 +141,13 @@
         "geonode:suelos_cienmil_er_latlong",
         "geonode:suelos_salinos_0_30_recorte_9622e0e127b7ae1d157c7f49d41605f3",
         "geonode:suelos_salinos_30_100_recorte_437dcf998c66ee96455f4cb196eda5b1"
-        
-
-        
-       ]
-    }, 
-    {
-      "tab": {
-        "id": "Capas",
-        "searcheable": true,
-        "content": "Capas" 
-
-      },
-      "type": "wms",
-      "peso": 70,
-      "nombre": "Suelos",
-      "short_abstract": "Suelos, Textura, Carbono, pH, SisINTA",
-      "class": "",
-      "seccion": "Suelos",
-      "servicio": "wms",
-      "version": "1.3.0",
-      "feature_info_format":"application/json",
-      "host": "https://geo-backend.inta.gob.ar/geoserver/wms",
-      "allowed_layers": [ 
-        
-        "geonode:suelos_argentina_1_500" ,
-        
-        "geonode:Mapa_COS_Nacional"
-        
-       ]
-
+      ]
     },
     {
       "tab": {
         "id": "Capas",
         "searcheable": true,
-        "content": "Capas" 
-
+        "content": "Capas"
       },
       "type": "wms",
       "peso": 70,
@@ -189,10 +157,32 @@
       "seccion": "Suelos",
       "servicio": "wms",
       "version": "1.3.0",
-      "feature_info_format":"application/json",
+      "feature_info_format": "application/json",
+      "host": "https://geo-backend.inta.gob.ar/geoserver/wms",
+      "allowed_layers": [
+        "geonode:suelos_argentina_1_500",
+        "geonode:Mapa_COS_Nacional"
+      ]
+    },
+    {
+      "tab": {
+        "id": "Capas",
+        "searcheable": true,
+        "content": "Capas"
+      },
+      "type": "wms",
+      "peso": 70,
+      "nombre": "Suelos",
+      "short_abstract": "Suelos, Textura, Carbono, pH, SisINTA",
+      "class": "",
+      "seccion": "Suelos",
+      "servicio": "wms",
+      "version": "1.3.0",
+      "feature_info_format": "application/json",
       "host": "https://geo-nodo01.inta.gob.ar/geoserver/wms",
-      "allowed_layers": [ 
-        
+      "allowed_layers": [
+        "geonode:carta_sta_rosa_final_src4326",
+        "geonode:las_lajitas_suelos",
         "geonode:suelosdelnoa_2025",
         "geonode:suelo_jujuy_pj4326",
         "geonode:suelos_mojotoro_2022_v2",
@@ -201,16 +191,13 @@
         "geonode:ar_miraflores_el_galpon",
         "geonode:cu_miraflores_el_galpon",
         "geonode:carta_suelos_valle_lerma_ll"
-        
-       ]
-
+      ]
     },
     {
       "tab": {
         "id": "Capas",
         "searcheable": true,
-        "content": "Capas" 
-
+        "content": "Capas"
       },
       "type": "wms",
       "peso": 70,
@@ -220,47 +207,19 @@
       "seccion": "Suelos",
       "servicio": "wms",
       "version": "1.3.0",
-      "feature_info_format":"application/json",
+      "feature_info_format": "application/json",
       "host": "https://geo-nodo10.inta.gob.ar/geoserver/wms",
-      "allowed_layers": [ 
-        
+      "allowed_layers": [
         "geonode:suelos_santa_fe_25",
         "geonode:suelos_santa_fe_250_base_completa",
         "geonode:cpa_santa_fe"
-       ]
-
-    },
-     {
-      "tab": {
-        "id": "Capas",
-        "searcheable": true,
-        "content": "Capas" 
-
-      },
-      "type": "wms",
-      "peso": 70,
-      "nombre": "Suelos",
-      "short_abstract": "Suelos, Textura, Carbono, pH, SisINTA",
-      "class": "",
-      "seccion": "Suelos",
-      "servicio": "wms",
-      "version": "1.3.0",
-      "feature_info_format":"application/json",
-      "host": "https://geo-nodo13.inta.gob.ar/geoserver/wms",
-      "allowed_layers": [ 
-        
-        "geonode:mapa_guarani_final_i",
-        
-        "geonode:suelos_alemp7"
-       ]
-
+      ]
     },
     {
       "tab": {
         "id": "Capas",
         "searcheable": true,
-        "content": "Capas" 
-
+        "content": "Capas"
       },
       "type": "wms",
       "peso": 70,
@@ -270,29 +229,45 @@
       "seccion": "Suelos",
       "servicio": "wms",
       "version": "1.3.0",
-      "feature_info_format":"application/json",
+      "feature_info_format": "application/json",
+      "host": "https://geo-nodo13.inta.gob.ar/geoserver/wms",
+      "allowed_layers": [
+        "geonode:mapa_guarani_final_i",
+        "geonode:suelos_alemp7"
+      ]
+    },
+    {
+      "tab": {
+        "id": "Capas",
+        "searcheable": true,
+        "content": "Capas"
+      },
+      "type": "wms",
+      "peso": 70,
+      "nombre": "Suelos",
+      "short_abstract": "Suelos, Textura, Carbono, pH, SisINTA",
+      "class": "",
+      "seccion": "Suelos",
+      "servicio": "wms",
+      "version": "1.3.0",
+      "feature_info_format": "application/json",
       "host": "https://geo-nodo15.inta.gob.ar/geoserver/wms",
-      "allowed_layers": [ 
-        
+      "allowed_layers": [
+        "geonode:suelosvegetacion_geonodo",
         "geonode:arizona_v0_02d647e0a3661237e9442c9ce388df2d",
-        
         "geonode:buenaesperanza_v0",
         "geonode:concaran_v0_676e7dd96118736d2ea36e767bd7c7fd",
         "geonode:loyola_varela_v0_017028c132f4111b991dff14de997fd8",
         "geonode:sanluis_v1",
         "geonode:villagralroca_v0",
         "geonode:villamercedes_v0"
-
-
-       ]
-
+      ]
     },
     {
       "tab": {
         "id": "Capas",
         "searcheable": true,
-        "content": "Capas" 
-
+        "content": "Capas"
       },
       "type": "wms",
       "peso": 70,
@@ -302,25 +277,20 @@
       "seccion": "Suelos",
       "servicio": "wms",
       "version": "1.3.0",
-      "feature_info_format":"application/json",
+      "feature_info_format": "application/json",
       "host": "https://geo-nodo02.inta.gob.ar/geoserver/wms",
-      "allowed_layers": [ 
-        
+      "allowed_layers": [
+        "geonode:suelos_beltaboada",
         "geonode:suelos",
         "geonode:suelos_ltf",
-        
         "geonode:geoformas_uc_belgrano"
-         
-       ]
-
+      ]
     },
-    
     {
       "tab": {
         "id": "Capas",
         "searcheable": true,
-        "content": "Capas" 
-
+        "content": "Capas"
       },
       "type": "wms",
       "peso": 70,
@@ -330,27 +300,22 @@
       "seccion": "Suelos",
       "servicio": "wms",
       "version": "1.3.0",
-      "feature_info_format":"application/json",
+      "feature_info_format": "application/json",
       "host": "https://geo-nodo04.inta.gob.ar/geoserver/wms",
-      "allowed_layers": [ 
-        
+      "allowed_layers": [
         "geonode:prueba",
         "geonode:sector_2",
         "geonode:suelos_irisarri_para_geo_inta",
         "geonode:suelos_rc",
         "geonode:suelos_rionegro",
         "geonode:av_texturas"
-
-         
-       ]
-
+      ]
     },
     {
       "tab": {
         "id": "Capas",
         "searcheable": true,
-        "content": "Capas" 
-
+        "content": "Capas"
       },
       "type": "wms",
       "peso": 70,
@@ -360,10 +325,9 @@
       "seccion": "Suelos",
       "servicio": "wms",
       "version": "1.3.0",
-      "feature_info_format":"application/json",
+      "feature_info_format": "application/json",
       "host": "https://geo-nodo08.inta.gob.ar/geoserver/wms",
-      "allowed_layers": [ 
-        
+      "allowed_layers": [
         "geonode:2024_suelos_cordoba_500mil",
         "geonode:2025_cad_suelos_cordoba_100mil",
         "geonode:250000_final",
@@ -372,17 +336,13 @@
         "geonode:suelos_cordoba_500mil_parcial",
         "geonode:aptitud_riego_500mil",
         "geonode:ambientes"
-
-         
-       ]
-
+      ]
     },
     {
       "tab": {
         "id": "Capas",
         "searcheable": true,
-        "content": "Capas" 
-
+        "content": "Capas"
       },
       "type": "wms",
       "peso": 70,
@@ -392,10 +352,9 @@
       "seccion": "Suelos",
       "servicio": "wms",
       "version": "1.3.0",
-      "feature_info_format":"application/json",
+      "feature_info_format": "application/json",
       "host": "https://geo-nodo09.inta.gob.ar/geoserver/wms",
-      "allowed_layers": [ 
-        
+      "allowed_layers": [
         "geonode:Lomas_arenosas",
         "geonode:Suelos_Esquina2",
         "geonode:Suelos_Goya",
@@ -408,19 +367,13 @@
         "geonode:suelos_santotome",
         "geonode:suelos_sauce",
         "geonode:suelos_yacireta"
-        
-         
-       ]
-
+      ]
     },
-    
-    
     {
       "tab": {
         "id": "Capas",
         "searcheable": true,
-        "content": "Capas" 
-
+        "content": "Capas"
       },
       "type": "wmslayer",
       "peso": 50,
@@ -430,13 +383,12 @@
       "seccion": "Agua",
       "servicio": "wms",
       "version": "1.3.0",
-      "feature_info_format":"application/json",
+      "feature_info_format": "application/json",
       "host": "https://geo-backend.inta.gob.ar/geoserver/wms",
-      "allowed_layers": [ 
-        
-       "geonode:region_3b_veglagaltoandinas_v2_1a859d3738e5cd8b18d48c9c4423a788",
-       "geonode:region_3a_vegaslagunaspuna_v2_36dd84b6728c478d150a3b612e259bb2",
-       "geonode:region_2_v2_8c083afd5ec3553fadb933a3b52ad637",
+      "allowed_layers": [
+        "geonode:region_3b_veglagaltoandinas_v2_1a859d3738e5cd8b18d48c9c4423a788",
+        "geonode:region_3a_vegaslagunaspuna_v2_36dd84b6728c478d150a3b612e259bb2",
+        "geonode:region_2_v2_8c083afd5ec3553fadb933a3b52ad637",
         "geonode:region_1_humedalesmontanos_v2_ea182d56b07dafa08d22569f646a4439",
         "geonode:region_4_humedalesmisioneros_v2681474bca679",
         "geonode:region_5a_riosesterosrioparana_v2ffdad89446e6",
@@ -453,21 +405,13 @@
         "geonode:region_10b_lagunasvegtaspatagoniaextaandina_v2f67aa9e48992",
         "geonode:region_10c_mallinesturberaspatagoniasur_v2cf24f015cc44",
         "geonode:region_10a_lagoscursosaguamallinespatagonicos_v292635bff2e61"
-      
-       ]
-
+      ]
     },
-
-    
-
-
-    
     {
       "tab": {
         "id": "Capas",
         "searcheable": true,
-        "content": "Capas" 
-
+        "content": "Capas"
       },
       "type": "wmslayer",
       "peso": 10,
@@ -477,10 +421,9 @@
       "seccion": "Agri",
       "servicio": "wms",
       "version": "1.3.0",
-      "feature_info_format":"application/json",
+      "feature_info_format": "application/json",
       "host": "https://geo-backend.inta.gob.ar/geoserver/wms",
-      "allowed_layers": [ 
-        
+      "allowed_layers": [
         "geonode:mnc_verano2024_f300268fd112b0ec3ef5f731edb78882",
         "geonode:invierno2020",
         "geonode:mnc_invierno_2019",
@@ -491,17 +434,14 @@
         "geonode:mnc_verano_2020",
         "geonode:mnc_verano2021",
         "geonode:MNC_verano2022",
-        "geonode:MNC_verano_2023"    
-      
-       ]
-
+        "geonode:MNC_verano_2023"
+      ]
     },
     {
       "tab": {
         "id": "Capas",
         "searcheable": true,
-        "content": "Capas" 
-
+        "content": "Capas"
       },
       "type": "wmslayer",
       "peso": 10,
@@ -511,26 +451,18 @@
       "seccion": "Agri",
       "servicio": "wms",
       "version": "1.3.0",
-      "feature_info_format":"application/json",
+      "feature_info_format": "application/json",
       "host": "https://geo-nodo05.inta.gob.ar/geoserver/wms",
-      "allowed_layers": [ 
-        
-        
+      "allowed_layers": [
         "geonode:mnc_inv24_eaef41861ef189c2add78522812c553c",
-        "geonode:mnc_ver25_0137b886113242df34818d72a99f6838"    
-      
-       ]
-
+        "geonode:mnc_ver25_0137b886113242df34818d72a99f6838"
+      ]
     },
-
-
-
     {
       "tab": {
         "id": "Capas",
         "searcheable": true,
-        "content": "Capas" 
-
+        "content": "Capas"
       },
       "type": "wmslayer",
       "peso": 10,
@@ -540,24 +472,20 @@
       "seccion": "Agri",
       "servicio": "wms",
       "version": "1.3.0",
-      "feature_info_format":"application/json",
+      "feature_info_format": "application/json",
       "host": "https://geo-nodo05.inta.gob.ar/geoserver/wms",
-      "allowed_layers": [ 
-        
+      "allowed_layers": [
         "geonode:nro_cultivos_qgis_merge_hc_b3701746b67214762864f60ee3112b0f",
         "geonode:numero_cereales_fafef34c656359ff52417d29bff95b36",
-        "geonode:numero_s1_29f49a97991266889e6282c87c043b49",      
+        "geonode:numero_s1_29f49a97991266889e6282c87c043b49",
         "geonode:rotaciones_245adf946d8e6458bcce0e19a9e3e33c"
-      
-       ]
-
+      ]
     },
-     {
+    {
       "tab": {
         "id": "Capas",
         "searcheable": true,
-        "content": "Capas" 
-
+        "content": "Capas"
       },
       "type": "wmslayer",
       "peso": 60,
@@ -567,9 +495,9 @@
       "seccion": "Clima",
       "servicio": "wms",
       "version": "1.3.0",
-      "feature_info_format":"application/json",
+      "feature_info_format": "application/json",
       "host": "https://geo-nodo01.inta.gob.ar/geoserver/wms",
-      "allowed_layers": [ 
+      "allowed_layers": [
         "geonode:01_pp_ba57f25af7aebf4d0eb378552ed2daaa",
         "geonode:02_pp_96e4e2d11636fafd131005ceac02133e",
         "geonode:03_pp_7241fb309c4814f1d3e4824b4ea8d37e",
@@ -594,7 +522,7 @@
         "geonode:09_p_ep_95bac3273367b75241d854df953a133e",
         "geonode:10_p_ep_33dc7c9b71dce20116f410756eb13217",
         "geonode:12_p_ep_9598867b5ad064117d19f15d99ad52ce",
-        "geonode:p_ep_balanceh_7354439de7a8b0eca1f2ec3fff94d0f0",		
+        "geonode:p_ep_balanceh_7354439de7a8b0eca1f2ec3fff94d0f0",
         "geonode:01_tempera_1087a84f0121b1037656b92f4bd7d80c",
         "geonode:02_tempera_63b3a90e3889d87d53f550ca1e55cc41",
         "geonode:03_tempera_b74441a3e82189b7dbfad1b6d0b00f88",
@@ -607,19 +535,15 @@
         "geonode:10_tempera_000271a9a5839b49aced5b7b626185e8",
         "geonode:11_tempera_29fce3517327c5765fc4e5ccf7954550",
         "geonode:12_tempera_54ee78700fe9787b416d2eb008255537",
-        "geonode:13_tempera_anual_d05a5c7cfea478b26501471d4953a160",		
+        "geonode:13_tempera_anual_d05a5c7cfea478b26501471d4953a160",
         "geonode:indice_aridez_demartone_17bc70943cefbec0e083881c5b3054e3"
-       
-      
-       ]
-
+      ]
     },
-     {
+    {
       "tab": {
         "id": "Capas",
         "searcheable": true,
-        "content": "Capas" 
-
+        "content": "Capas"
       },
       "type": "wmslayer",
       "peso": 65,
@@ -629,21 +553,17 @@
       "seccion": "Riesgo",
       "servicio": "wms",
       "version": "1.3.0",
-      "feature_info_format":"application/json",
+      "feature_info_format": "application/json",
       "host": "https://geo-backend.inta.gob.ar/geoserver/wms",
-      "allowed_layers": [ 
-        
+      "allowed_layers": [
         "geonode:ire_2017"
-      
-       ]
-
+      ]
     },
     {
       "tab": {
         "id": "Capas",
         "searcheable": true,
-        "content": "Capas" 
-
+        "content": "Capas"
       },
       "type": "wmslayer",
       "peso": 55,
@@ -653,22 +573,17 @@
       "seccion": "Biod",
       "servicio": "wms",
       "version": "1.3.0",
-      "feature_info_format":"application/json",
+      "feature_info_format": "application/json",
       "host": "https://geo-nodo01.inta.gob.ar/geoserver/wms",
-      "allowed_layers": [ 
-        
+      "allowed_layers": [
         "geonode:uf_puna"
-      
-       ]
-
+      ]
     },
-
-     {
+    {
       "tab": {
         "id": "Capas",
         "searcheable": true,
-        "content": "Capas" 
-
+        "content": "Capas"
       },
       "type": "wmslayer",
       "peso": 62,
@@ -678,26 +593,17 @@
       "seccion": "Econ",
       "servicio": "wms",
       "version": "1.3.0",
-      "feature_info_format":"application/json",
+      "feature_info_format": "application/json",
       "host": "https://geo-nodo01.inta.gob.ar/geoserver/wms",
-      "allowed_layers": [ 
-        
+      "allowed_layers": [
         "geonode:regiones_agro_eco_homog_noa"
-      
-       ]
-
+      ]
     },
-
-
-
-
-
-     {
+    {
       "tab": {
         "id": "Capas",
         "searcheable": true,
-        "content": "Capas" 
-
+        "content": "Capas"
       },
       "type": "wmslayer",
       "peso": 63,
@@ -707,21 +613,17 @@
       "seccion": "Orden",
       "servicio": "wms",
       "version": "1.3.0",
-      "feature_info_format":"application/json",
+      "feature_info_format": "application/json",
       "host": "https://geo-nodo01.inta.gob.ar/geoserver/wms",
-      "allowed_layers": [ 
-        
+      "allowed_layers": [
         "geonode:desmonte2025_intersec_dpto"
-      
-       ]
-
+      ]
     },
     {
       "tab": {
         "id": "Capas",
         "searcheable": true,
-        "content": "Capas" 
-
+        "content": "Capas"
       },
       "type": "wmslayer",
       "peso": 63,
@@ -731,52 +633,37 @@
       "seccion": "Orden",
       "servicio": "wms",
       "version": "1.3.0",
-      "feature_info_format":"application/json",
+      "feature_info_format": "application/json",
       "host": "https://geo-backend.inta.gob.ar/geoserver/wms",
-      "allowed_layers": [ 
-        
+      "allowed_layers": [
         "geonode:lccs_n3_2007"
-      
-       ]
-
+      ]
     },
-
-
     {
       "tab": {
         "id": "Capas",
         "searcheable": true,
-        "content": "Capas" 
-
+        "content": "Capas"
       },
       "type": "wmslayer",
       "peso": 63,
       "nombre": "Ordenamiento Territorial",
       "short_abstract": "Uso y Cobertura del Suelo",
       "class": "",
-      "seccion": "Orden",      
+      "seccion": "Orden",
       "servicio": "wms",
       "version": "1.3.0",
-      "feature_info_format":"application/json",
+      "feature_info_format": "application/json",
       "host": "https://geo-nodo02.inta.gob.ar/geoserver/wms",
-      "allowed_layers": [ 
-        
-        
+      "allowed_layers": [
         "geonode:zonificacion_usosuelo"
-        
-         
-       ]
-
+      ]
     },
-
-
-
     {
       "tab": {
         "id": "Capas",
         "searcheable": true,
-        "content": "Capas" 
-
+        "content": "Capas"
       },
       "type": "wmslayer",
       "peso": 300,
@@ -795,16 +682,16 @@
         "content": "Nodos Regionales",
         "list_type": "combobox"
       },
-        "type": "wmslayer",
-        "peso": 120,
-        "nombre": "Región Salta y Jujuy",
-        "short_abstract": "toda la info",
-        "class": "",
-        "seccion": "nodo1",
-        "servicio": "wms",
-        "version": "1.3.0",
-        "host": "https://geo-nodo01.inta.gob.ar/geoserver/wms"
-  },
+      "type": "wmslayer",
+      "peso": 120,
+      "nombre": "Región Salta y Jujuy",
+      "short_abstract": "toda la info",
+      "class": "",
+      "seccion": "nodo1",
+      "servicio": "wms",
+      "version": "1.3.0",
+      "host": "https://geo-nodo01.inta.gob.ar/geoserver/wms"
+    },
     {
       "tab": {
         "id": "Nodos",
@@ -812,16 +699,16 @@
         "content": "Nodos Regionales",
         "list_type": "combobox"
       },
-        "type": "wmslayer",
-        "peso": 350,
-        "nombre": "Región Tucumán Santiago del Estero",
-        "short_abstract": "toda la info",
-        "class": "",
-        "seccion": "nodo2",
-        "servicio": "wms",
-        "version": "1.3.0",
-        "host": "https://geo-nodo02.inta.gob.ar/geoserver/wms"
-  },
+      "type": "wmslayer",
+      "peso": 350,
+      "nombre": "Región Tucumán Santiago del Estero",
+      "short_abstract": "toda la info",
+      "class": "",
+      "seccion": "nodo2",
+      "servicio": "wms",
+      "version": "1.3.0",
+      "host": "https://geo-nodo02.inta.gob.ar/geoserver/wms"
+    },
     {
       "tab": {
         "id": "Nodos",
@@ -829,16 +716,16 @@
         "content": "Nodos Regionales",
         "list_type": "combobox"
       },
-        "type": "wmslayer",
-        "peso": 60,
-        "nombre": "Región Entre Ríos",
-        "short_abstract": "toda la info",
-        "class": "",
-        "seccion": "nodo3",
-        "servicio": "wms",
-        "version": "1.3.0",
-        "host": "https://geo-nodo03.inta.gob.ar/geoserver/wms"
-  },
+      "type": "wmslayer",
+      "peso": 60,
+      "nombre": "Región Entre Ríos",
+      "short_abstract": "toda la info",
+      "class": "",
+      "seccion": "nodo3",
+      "servicio": "wms",
+      "version": "1.3.0",
+      "host": "https://geo-nodo03.inta.gob.ar/geoserver/wms"
+    },
     {
       "tab": {
         "id": "Nodos",
@@ -846,16 +733,16 @@
         "content": "Nodos Regionales",
         "list_type": "combobox"
       },
-        "type": "wmslayer",
-        "peso": 110,
-        "nombre": "Región Río Negro - Neuquén ",
-        "short_abstract": "toda la info",
-        "class": "",
-        "seccion": "nodo4",
-        "servicio": "wms",
-        "version": "1.3.0",
-        "host": "https://geo-nodo04.inta.gob.ar/geoserver/wms"
-  },
+      "type": "wmslayer",
+      "peso": 110,
+      "nombre": "Región Río Negro - Neuquén ",
+      "short_abstract": "toda la info",
+      "class": "",
+      "seccion": "nodo4",
+      "servicio": "wms",
+      "version": "1.3.0",
+      "host": "https://geo-nodo04.inta.gob.ar/geoserver/wms"
+    },
     {
       "tab": {
         "id": "Nodos",
@@ -863,16 +750,16 @@
         "content": "Nodos Regionales",
         "list_type": "combobox"
       },
-        "type": "wmslayer",
-        "peso": 11,
-        "nombre": "Centro Nacional de Investigaciones Agropecuarias",
-        "short_abstract": "toda la info",
-        "class": "",
-        "seccion": "nodo5",
-        "servicio": "wms",
-        "version": "1.3.0",
-        "host": "https://geo-nodo05.inta.gob.ar/geoserver/wms"
-  },
+      "type": "wmslayer",
+      "peso": 11,
+      "nombre": "Centro Nacional de Investigaciones Agropecuarias",
+      "short_abstract": "toda la info",
+      "class": "",
+      "seccion": "nodo5",
+      "servicio": "wms",
+      "version": "1.3.0",
+      "host": "https://geo-nodo05.inta.gob.ar/geoserver/wms"
+    },
     {
       "tab": {
         "id": "Nodos",
@@ -880,16 +767,16 @@
         "content": "Nodos Regionales",
         "list_type": "combobox"
       },
-        "type": "wmslayer",
-        "peso": 100,
-        "nombre": "Región Patagonia Sur ",
-        "short_abstract": "toda la info",
-        "class": "",
-        "seccion": "nodo6",
-        "servicio": "wms",
-        "version": "1.3.0",
-        "host": "https://geo-nodo06.inta.gob.ar/geoserver/wms"
-  },
+      "type": "wmslayer",
+      "peso": 100,
+      "nombre": "Región Patagonia Sur ",
+      "short_abstract": "toda la info",
+      "class": "",
+      "seccion": "nodo6",
+      "servicio": "wms",
+      "version": "1.3.0",
+      "host": "https://geo-nodo06.inta.gob.ar/geoserver/wms"
+    },
     {
       "tab": {
         "id": "Nodos",
@@ -897,16 +784,16 @@
         "content": "Nodos Regionales",
         "list_type": "combobox"
       },
-        "type": "wmslayer",
-        "peso": 15,
-        "nombre": "Región Buenos Aires ",
-        "short_abstract": "toda la info",
-        "class": "",
-        "seccion": "nodo7",
-        "servicio": "wms",
-        "version": "1.3.0",
-        "host": "https://geo-nodo07.inta.gob.ar/geoserver/wms"
-  },
+      "type": "wmslayer",
+      "peso": 15,
+      "nombre": "Región Buenos Aires ",
+      "short_abstract": "toda la info",
+      "class": "",
+      "seccion": "nodo7",
+      "servicio": "wms",
+      "version": "1.3.0",
+      "host": "https://geo-nodo07.inta.gob.ar/geoserver/wms"
+    },
     {
       "tab": {
         "id": "Nodos",
@@ -914,16 +801,16 @@
         "content": "Nodos Regionales",
         "list_type": "combobox"
       },
-        "type": "wmslayer",
-        "peso": 40,
-        "nombre": "Región Córdoba ",
-        "short_abstract": "toda la info",
-        "class": "",
-        "seccion": "nodo8",
-        "servicio": "wms",
-        "version": "1.3.0",
-        "host": "https://geo-nodo08.inta.gob.ar/geoserver/wms"
-  },
+      "type": "wmslayer",
+      "peso": 40,
+      "nombre": "Región Córdoba ",
+      "short_abstract": "toda la info",
+      "class": "",
+      "seccion": "nodo8",
+      "servicio": "wms",
+      "version": "1.3.0",
+      "host": "https://geo-nodo08.inta.gob.ar/geoserver/wms"
+    },
     {
       "tab": {
         "id": "Nodos",
@@ -931,16 +818,16 @@
         "content": "Nodos Regionales",
         "list_type": "combobox"
       },
-        "type": "wmslayer",
-        "peso": 10,
-        "nombre": "Nacional ",
-        "short_abstract": "toda la info",
-        "class": "",
-        "seccion": "nodonac",
-        "servicio": "wms",
-        "version": "1.3.0",
-        "host": "https://geo-backend.inta.gob.ar/geoserver/wms"
-  },
+      "type": "wmslayer",
+      "peso": 10,
+      "nombre": "Nacional ",
+      "short_abstract": "toda la info",
+      "class": "",
+      "seccion": "nodonac",
+      "servicio": "wms",
+      "version": "1.3.0",
+      "host": "https://geo-backend.inta.gob.ar/geoserver/wms"
+    },
     {
       "tab": {
         "id": "Nodos",
@@ -948,16 +835,16 @@
         "content": "Nodos Regionales",
         "list_type": "combobox"
       },
-        "type": "wmslayer",
-        "peso": 20,
-        "nombre": "Región Catamarca - La Rioja ",
-        "short_abstract": "toda la info",
-        "class": "",
-        "seccion": "nodo11",
-        "servicio": "wms",
-        "version": "1.3.0",
-        "host": "https://geo-nodo11.inta.gob.ar/geoserver/wms"
-  },
+      "type": "wmslayer",
+      "peso": 20,
+      "nombre": "Región Catamarca - La Rioja ",
+      "short_abstract": "toda la info",
+      "class": "",
+      "seccion": "nodo11",
+      "servicio": "wms",
+      "version": "1.3.0",
+      "host": "https://geo-nodo11.inta.gob.ar/geoserver/wms"
+    },
     {
       "tab": {
         "id": "Nodos",
@@ -965,16 +852,16 @@
         "content": "Nodos Regionales",
         "list_type": "combobox"
       },
-        "type": "wmslayer",
-        "peso": 50,
-        "nombre": "Región Corrientes ",
-        "short_abstract": "toda la info",
-        "class": "",
-        "seccion": "nodo9",
-        "servicio": "wms",
-        "version": "1.3.0",
-        "host": "https://geo-nodo09.inta.gob.ar/geoserver/wms"
-  },
+      "type": "wmslayer",
+      "peso": 50,
+      "nombre": "Región Corrientes ",
+      "short_abstract": "toda la info",
+      "class": "",
+      "seccion": "nodo9",
+      "servicio": "wms",
+      "version": "1.3.0",
+      "host": "https://geo-nodo09.inta.gob.ar/geoserver/wms"
+    },
     {
       "tab": {
         "id": "Nodos",
@@ -982,16 +869,16 @@
         "content": "Nodos Regionales",
         "list_type": "combobox"
       },
-        "type": "wmslayer",
-        "peso": 70,
-        "nombre": "Región La Pampa - San Luis",
-        "short_abstract": "toda la info",
-        "class": "",
-        "seccion": "nodo15",
-        "servicio": "wms",
-        "version": "1.3.0",
-        "host": "https://geo-nodo15.inta.gob.ar/geoserver/wms"
-  },
+      "type": "wmslayer",
+      "peso": 70,
+      "nombre": "Región La Pampa - San Luis",
+      "short_abstract": "toda la info",
+      "class": "",
+      "seccion": "nodo15",
+      "servicio": "wms",
+      "version": "1.3.0",
+      "host": "https://geo-nodo15.inta.gob.ar/geoserver/wms"
+    },
     {
       "tab": {
         "id": "Nodos",
@@ -999,16 +886,16 @@
         "content": "Nodos Regionales",
         "list_type": "combobox"
       },
-        "type": "wmslayer",
-        "peso": 80,
-        "nombre": "Región Mendoza - San Juan",
-        "short_abstract": "toda la info",
-        "class": "",
-        "seccion": "nodo12",
-        "servicio": "wms",
-        "version": "1.3.0",
-        "host": "https://geo-nodo12.inta.gob.ar/geoserver/wms"
-  },
+      "type": "wmslayer",
+      "peso": 80,
+      "nombre": "Región Mendoza - San Juan",
+      "short_abstract": "toda la info",
+      "class": "",
+      "seccion": "nodo12",
+      "servicio": "wms",
+      "version": "1.3.0",
+      "host": "https://geo-nodo12.inta.gob.ar/geoserver/wms"
+    },
     {
       "tab": {
         "id": "Nodos",
@@ -1016,16 +903,16 @@
         "content": "Nodos Regionales",
         "list_type": "combobox"
       },
-        "type": "wmslayer",
-        "peso": 90,
-        "nombre": "Región Misiones",
-        "short_abstract": "toda la info",
-        "class": "",
-        "seccion": "nodo13",
-        "servicio": "wms",
-        "version": "1.3.0",
-        "host": "https://geo-nodo13.inta.gob.ar/geoserver/wms"
-  },
+      "type": "wmslayer",
+      "peso": 90,
+      "nombre": "Región Misiones",
+      "short_abstract": "toda la info",
+      "class": "",
+      "seccion": "nodo13",
+      "servicio": "wms",
+      "version": "1.3.0",
+      "host": "https://geo-nodo13.inta.gob.ar/geoserver/wms"
+    },
     {
       "tab": {
         "id": "Nodos",
@@ -1033,16 +920,16 @@
         "content": "Nodos Regionales",
         "list_type": "combobox"
       },
-        "type": "wmslayer",
-        "peso": 150,
-        "nombre": "Región Santa Fe",
-        "short_abstract": "toda la info",
-        "class": "",
-        "seccion": "nodo10",
-        "servicio": "wms",
-        "version": "1.3.0",
-        "host": "https://geo-nodo10.inta.gob.ar/geoserver/wms"
-  },
+      "type": "wmslayer",
+      "peso": 150,
+      "nombre": "Región Santa Fe",
+      "short_abstract": "toda la info",
+      "class": "",
+      "seccion": "nodo10",
+      "servicio": "wms",
+      "version": "1.3.0",
+      "host": "https://geo-nodo10.inta.gob.ar/geoserver/wms"
+    },
     {
       "tab": {
         "id": "Nodos",
@@ -1050,18 +937,16 @@
         "content": "Nodos Regionales",
         "list_type": "combobox"
       },
-        "type": "wmslayer",
-        "peso": 30,
-        "nombre": "Región Chaco - Formosa",
-        "short_abstract": "toda la info",
-        "class": "",
-        "seccion": "nodo14",
-        "servicio": "wms",
-        "version": "1.3.0",
-        "host": "https://geo-nodo14.inta.gob.ar/geoserver/wms"
-  }
-
-
+      "type": "wmslayer",
+      "peso": 30,
+      "nombre": "Región Chaco - Formosa",
+      "short_abstract": "toda la info",
+      "class": "",
+      "seccion": "nodo14",
+      "servicio": "wms",
+      "version": "1.3.0",
+      "host": "https://geo-nodo14.inta.gob.ar/geoserver/wms"
+    }
   ],
   "template": "ign-geoportal-basic"
 }
