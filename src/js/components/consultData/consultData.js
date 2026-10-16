@@ -1,4 +1,6 @@
-let consultDataBtnClose = true;
+window.consultDataBtnClose = true;
+var consultDataBtnClose = true;
+window.isConsultActive = false;
 let map = document.getElementById("mapa");
 class ConsultData {
   constructor() {
@@ -48,30 +50,75 @@ function toggleConsultList() {
 function activateDataConsult() {
   const control = document.getElementById("iconCD");
 
-  // Toggle the active state for all editable layers
-  Object.values(mapa.editableLayers).forEach((editLayer) => {
-    editLayer.forEach((layer) => {
-      layer.activeData = !consultDataBtnClose;
+  // Invert state: consultDataBtnClose was true (closed), now it will be false (active)
+  consultDataBtnClose = !consultDataBtnClose;
+  window.consultDataBtnClose = consultDataBtnClose;
+  const isConsultActive = !consultDataBtnClose;
+  window.isConsultActive = isConsultActive;
+
+  const setLayerConsultActive = (lyr, active) => {
+    if (!lyr) return;
+    lyr.activeData = active;
+    if (typeof lyr.eachLayer === "function") {
+      lyr.eachLayer((subLyr) => {
+        setLayerConsultActive(subLyr, active);
+      });
+    }
+  };
+
+  // Set activeData for all editable layers
+  if (typeof mapa !== "undefined" && mapa && mapa.editableLayers) {
+    Object.values(mapa.editableLayers).forEach((editLayer) => {
+      if (Array.isArray(editLayer)) {
+        editLayer.forEach((layer) => {
+          setLayerConsultActive(layer, isConsultActive);
+        });
+      }
     });
-  });
+  }
 
-  // Toggle map interaction modes and update control styles
-  map.classList.toggle("queryLayer");
-  map.classList.toggle("leaflet-grab");
-  map.classList.toggle("leaflet-grabbing");
+  // Also set activeData on all layers in drawnItems (where file and clipped layers are added)
+  if (typeof drawnItems !== "undefined" && drawnItems) {
+    drawnItems.eachLayer((layer) => {
+      setLayerConsultActive(layer, isConsultActive);
+    });
+  }
 
-  if (consultDataBtnClose) {
+  // Also iterate addedLayers if any Leaflet instances or groupLayers are tracked
+  if (typeof addedLayers !== "undefined" && Array.isArray(addedLayers)) {
+    addedLayers.forEach((al) => {
+      if (al && al.id && typeof mapa !== "undefined" && mapa.groupLayers && mapa.groupLayers[al.id]) {
+        const group = mapa.groupLayers[al.id];
+        if (Array.isArray(group)) {
+          group.forEach((lyrName) => {
+            if (typeof drawnItems !== "undefined" && drawnItems && drawnItems._layers) {
+              Object.values(drawnItems._layers).forEach((dl) => {
+                if (dl && dl.name === lyrName) {
+                  setLayerConsultActive(dl, isConsultActive);
+                }
+              });
+            }
+          });
+        }
+      }
+    });
+  }
+
+  // Update map interaction styles
+  if (isConsultActive) {
+    map.classList.add("queryLayer");
+    map.classList.remove("leaflet-grab");
+    map.classList.remove("leaflet-grabbing");
     control.style.backgroundColor = "#33b560";
     control.querySelector("img").style.filter = "invert()";
     getPopupForWMS(true); // Enable WMS popups
   } else {
+    map.classList.remove("queryLayer");
+    map.classList.add("leaflet-grab");
     control.style.backgroundColor = "rgba(255, 255, 255, 0.9)";
     control.querySelector("img").style.removeProperty("filter");
     getPopupForWMS(false); // Disable WMS popups
   }
-
-  // Toggle the button close state
-  consultDataBtnClose = !consultDataBtnClose;
 }
 
 /**

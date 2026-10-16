@@ -60,15 +60,47 @@
   width: 100%;
   justify-content: space-between;
   padding: 10px 1px 10px 1px;
-  /* border: 1px solid #ddd; */
-  background-color: var(--lyr-menu-bg-color);
+  background-color: #ffffff;
+  color: #333333;
   -ms-user-select: none;
   -webkit-user-select: none;
   user-select: none;
   margin-bottom: -1px;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
-.active > div > a {
-  color: white;
+.file-layer .file-layername a {
+  color: #333333 !important;
+  text-decoration: none;
+}
+.file-layer .dropdown-toggle {
+  color: #555555 !important;
+}
+.file-layer .dropdown-toggle svg {
+  fill: currentColor;
+}
+.file-layer.active {
+  background-color: var(--active-bg-color, #407680) !important;
+}
+.file-layer.active .file-layername a {
+  color: #ffffff !important;
+}
+.file-layer.active .dropdown-toggle {
+  color: #ffffff !important;
+}
+.file-layer.active .dropdown-toggle svg {
+  fill: #ffffff !important;
+}
+.file-layer .dropdown-menu {
+  background-color: #ffffff !important;
+}
+.file-layer .dropdown-menu > li > a {
+  color: #333333 !important;
+  text-decoration: none !important;
+}
+.file-layer .dropdown-menu > li > a:hover,
+.file-layer .dropdown-menu > li > a:focus {
+  background-color: #f2f2f2 !important;
+  color: #000000 !important;
 }
 .file-img {
   cursor: pointer;

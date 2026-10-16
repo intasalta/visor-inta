@@ -59,10 +59,57 @@ class IClipLayer {
         weight: 3,
       },
     });
+    this.currentDrawHandler = drawPolygon;
     isSelectionDrawingActive = true;
     $("#drawPolygonBtn").addClass("ag-btn-disabled");
     $("#drawRectangleBtn").addClass("ag-btn-disabled");
-    $("#msgClipStatus").html("Haga clic en el mapa para trazar el polígono y haga doble clic para cerrarlo.").removeClass("hidden").css("color", "#333");
+
+    $("#msgClipStatus")
+      .html(
+        "Haga clic en el mapa para trazar los vértices. Cierre haciendo clic en el <b>primer punto</b> o <b>doble clic</b>." +
+        " <button id='btnFinishPolygon' type='button' class='btn btn-xs btn-primary' style='margin-left:8px;padding:2px 8px;font-size:11px;'>Cerrar forma</button>" +
+        " <button id='btnCancelClipDraw' type='button' class='btn btn-xs btn-default' style='margin-left:4px;padding:2px 8px;font-size:11px;'>Cancelar</button>"
+      )
+      .removeClass("hidden")
+      .css("color", "#333");
+
+    $("#btnFinishPolygon").off("click").on("click", (e) => {
+      e.preventDefault();
+      if (this.currentDrawHandler && typeof this.currentDrawHandler.completeShape === "function") {
+        this.currentDrawHandler.completeShape();
+      }
+    });
+
+    $("#btnCancelClipDraw").off("click").on("click", (e) => {
+      e.preventDefault();
+      this.cancelDrawing();
+    });
+
+    const onMapDblClick = (e) => {
+      if (this.currentDrawHandler && typeof this.currentDrawHandler.completeShape === "function") {
+        if (this.currentDrawHandler._markers && this.currentDrawHandler._markers.length >= 3) {
+          if (e && e.originalEvent) {
+            L.DomEvent.stopPropagation(e.originalEvent);
+          }
+          this.currentDrawHandler.completeShape();
+        }
+      }
+    };
+    mapa.on("dblclick", onMapDblClick);
+
+    const onDrawFinished = () => {
+      mapa.off("dblclick", onMapDblClick);
+      mapa.off("draw:created", onDrawFinished);
+      mapa.off("draw:drawstop", onDrawFinished);
+      isSelectionDrawingActive = false;
+      $("#drawPolygonBtn").removeClass("ag-btn-disabled");
+      $("#drawRectangleBtn").removeClass("ag-btn-disabled");
+      this.currentDrawHandler = null;
+    };
+
+    mapa.once("draw:created", onDrawFinished);
+    mapa.once("draw:drawstop", onDrawFinished);
+
     drawPolygon.enable();
   }
 
@@ -80,27 +127,125 @@ class IClipLayer {
         weight: 3,
       },
     });
+    this.currentDrawHandler = drawRectangle;
     isSelectionDrawingActive = true;
     $("#drawPolygonBtn").addClass("ag-btn-disabled");
     $("#drawRectangleBtn").addClass("ag-btn-disabled");
-    $("#msgClipStatus").html("Haga clic y arrastre en el mapa para trazar el rectángulo.").removeClass("hidden").css("color", "#333");
+
+    $("#msgClipStatus")
+      .html(
+        "Haga clic y arrastre en el mapa para trazar el rectángulo." +
+        " <button id='btnCancelClipDraw' type='button' class='btn btn-xs btn-default' style='margin-left:8px;padding:2px 8px;font-size:11px;'>Cancelar</button>"
+      )
+      .removeClass("hidden")
+      .css("color", "#333");
+
+    $("#btnCancelClipDraw").off("click").on("click", (e) => {
+      e.preventDefault();
+      this.cancelDrawing();
+    });
+
+    const onDrawFinished = () => {
+      mapa.off("draw:created", onDrawFinished);
+      mapa.off("draw:drawstop", onDrawFinished);
+      isSelectionDrawingActive = false;
+      $("#drawPolygonBtn").removeClass("ag-btn-disabled");
+      $("#drawRectangleBtn").removeClass("ag-btn-disabled");
+      this.currentDrawHandler = null;
+    };
+
+    mapa.once("draw:created", onDrawFinished);
+    mapa.once("draw:drawstop", onDrawFinished);
+
     drawRectangle.enable();
   }
 
+  cancelDrawing() {
+    if (this.currentDrawHandler && typeof this.currentDrawHandler.disable === "function") {
+      try {
+        this.currentDrawHandler.disable();
+      } catch (e) {}
+    }
+    this.currentDrawHandler = null;
+    isSelectionDrawingActive = false;
+    $("#drawPolygonBtn").removeClass("ag-btn-disabled");
+    $("#drawRectangleBtn").removeClass("ag-btn-disabled");
+    $("#msgClipStatus")
+      .html("Dibujo cancelado. Puede volver a dibujar o seleccionar otra herramienta.")
+      .removeClass("hidden")
+      .css("color", "#777");
+  }
+
   clearPreviousSelection() {
-    ["polygon", "rectangle"].forEach((type) => {
-      if (mapa && mapa.editableLayers && mapa.editableLayers[type]) {
-        const toDelete = [];
-        mapa.editableLayers[type].forEach((lyr) => {
-          if (lyr && lyr.id && String(lyr.id).includes("selection_")) {
-            toDelete.push(lyr);
+    if (this.currentDrawHandler && typeof this.currentDrawHandler.disable === "function") {
+      try {
+        this.currentDrawHandler.disable();
+      } catch (e) {}
+    }
+    this.currentDrawHandler = null;
+    isSelectionDrawingActive = false;
+    $("#drawPolygonBtn").removeClass("ag-btn-disabled");
+    $("#drawRectangleBtn").removeClass("ag-btn-disabled");
+
+    if (typeof drawnItems !== "undefined" && drawnItems && drawnItems._layers) {
+      Object.values(drawnItems._layers).forEach((lyr) => {
+        if (
+          lyr &&
+          ((lyr.id && String(lyr.id).includes("selection_")) ||
+            (lyr.name && String(lyr.name).includes("selection_")) ||
+            (lyr.options && lyr.options.fillColor === "#008dc9" && lyr.options.color === "#008dc9"))
+        ) {
+          drawnItems.removeLayer(lyr);
+        }
+      });
+    }
+
+    if (mapa && mapa.editableLayers) {
+      ["polygon", "rectangle"].forEach((type) => {
+        if (mapa.editableLayers[type]) {
+          for (let i = mapa.editableLayers[type].length - 1; i >= 0; i--) {
+            const lyr = mapa.editableLayers[type][i];
+            if (
+              lyr &&
+              ((lyr.id && String(lyr.id).includes("selection_")) ||
+                (lyr.name && String(lyr.name).includes("selection_")) ||
+                (lyr.options && lyr.options.fillColor === "#008dc9" && lyr.options.color === "#008dc9"))
+            ) {
+              if (typeof drawnItems !== "undefined" && drawnItems && drawnItems.hasLayer(lyr)) {
+                drawnItems.removeLayer(lyr);
+              }
+              mapa.editableLayers[type].splice(i, 1);
+            }
           }
-        });
-        toDelete.forEach((lyr) => {
-          mapa.deleteLayer(lyr.name || lyr.id);
-        });
+        }
+      });
+    }
+  }
+
+  cleanupDrawnShape(drawnShape) {
+    if (this.currentDrawHandler && typeof this.currentDrawHandler.disable === "function") {
+      try {
+        this.currentDrawHandler.disable();
+      } catch (e) {}
+    }
+    this.currentDrawHandler = null;
+    isSelectionDrawingActive = false;
+
+    if (drawnShape) {
+      if (typeof drawnItems !== "undefined" && drawnItems && drawnItems.hasLayer(drawnShape)) {
+        drawnItems.removeLayer(drawnShape);
       }
-    });
+      if (typeof mapa !== "undefined" && mapa && mapa.hasLayer(drawnShape)) {
+        mapa.removeLayer(drawnShape);
+      }
+      if (typeof mapa !== "undefined" && mapa && typeof mapa.deleteLayer === "function") {
+        try {
+          if (drawnShape.name) mapa.deleteLayer(drawnShape.name);
+          if (drawnShape.id) mapa.deleteLayer(drawnShape.id);
+        } catch (e) {}
+      }
+    }
+    this.clearPreviousSelection();
   }
 
   getDrawnShape() {
@@ -350,16 +495,34 @@ class IClipLayer {
             feat.properties.id)) ||
         `Elemento ${i + 1}`;
       let desc = "";
+      let extData = "";
       if (feat.properties) {
         const rows = Object.entries(feat.properties)
           .map(([k, v]) => `<b>${k}:</b> ${v}`)
           .join("<br/>");
         desc = `<description><![CDATA[${rows}]]></description>`;
+
+        const dataEntries = Object.entries(feat.properties)
+          .filter(([k]) => k !== "bbox" && k !== "styles")
+          .map(([k, v]) => {
+            const cleanVal =
+              v !== undefined && v !== null
+                ? String(v)
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                : "";
+            return `      <Data name="${k}"><value>${cleanVal}</value></Data>`;
+          })
+          .join("\n");
+        if (dataEntries) {
+          extData = `    <ExtendedData>\n${dataEntries}\n    </ExtendedData>\n`;
+        }
       }
       placemarks += `    <Placemark>
       <name>${name}</name>
       ${desc}
-      ${geomToKml(feat.geometry)}
+${extData}      ${geomToKml(feat.geometry)}
     </Placemark>\n`;
     });
 
@@ -457,25 +620,17 @@ ${placemarks}</Document>
       }
       const data = gestorMenu.getLayerData ? gestorMenu.getLayerData(layerName) : null;
       if (data && data.capa) {
-        if (typeof capaEsVector === "function" && capaEsVector(data.capa)) return true;
-        const parts = layerName.split(":");
-        if (parts.length === 2 && parts[1].length > 40) return false; // Heurística ráster GeoNode INTA
         if (data.capa.tipo === "raster") return false;
+        if (typeof capaEsVector === "function" && capaEsVector(data.capa)) return true;
         return true;
       }
     }
 
     if (typeof addedLayers !== "undefined") {
       const added = addedLayers.find((l) => l.name === layerName || l.id === layerName);
-      if (added && (added.type === "geoprocess" || added.type === "geojson" || added.type === "shp" || added.type === "kml" || added.type === "WFS")) {
+      if (added && (added.type === "geoprocess" || added.type === "geojson" || added.type === "shp" || added.type === "kml" || added.type === "WFS" || added.type === "WMS")) {
         return true;
       }
-    }
-
-    // Heurística de nombre largo en GeoNode INTA
-    const parts = layerName.split(":");
-    if (parts.length === 2 && parts[1].length > 40) {
-      return false;
     }
 
     return true;
@@ -592,11 +747,27 @@ ${placemarks}</Document>
     if (typeof addedLayers !== "undefined") {
       const foundAdded = addedLayers.find((l) => l.name === layerName || l.id === layerName);
       if (foundAdded) {
-        if (foundAdded.host || (foundAdded.layer && foundAdded.layer.host)) {
+        let host = foundAdded.host || (foundAdded.layer && foundAdded.layer.host);
+
+        // Si no tiene host directo, buscar en servicesLoaded
+        if (!host && typeof servicesLoaded !== "undefined") {
+          const serviceId = foundAdded.id !== undefined ? foundAdded.id : (typeof layersIndex !== "undefined" ? layersIndex[layerName] : undefined);
+          if (serviceId !== undefined && servicesLoaded[serviceId] && servicesLoaded[serviceId].host) {
+            host = servicesLoaded[serviceId].host;
+          }
+        }
+
+        // Si no, buscar en overlayMaps
+        if (!host && typeof overlayMaps !== "undefined" && overlayMaps[layerName]) {
+          const om = overlayMaps[layerName];
+          host = om._url || (om.options && om.options.url);
+        }
+
+        if (host) {
           return {
             name: foundAdded.name || foundAdded.id,
-            title: foundAdded.title || foundAdded.name || layerName,
-            host: foundAdded.host || (foundAdded.layer && foundAdded.layer.host),
+            title: foundAdded.title || (foundAdded.layer && foundAdded.layer.title) || foundAdded.name || layerName,
+            host: host,
           };
         } else if (foundAdded.layer && (foundAdded.layer.features || foundAdded.layer.type === "FeatureCollection")) {
           return {
@@ -606,6 +777,19 @@ ${placemarks}</Document>
             localData: foundAdded.layer,
           };
         }
+      }
+    }
+
+    // 7. Fallback global en overlayMaps
+    if (typeof overlayMaps !== "undefined" && overlayMaps[layerName]) {
+      const om = overlayMaps[layerName];
+      const host = om._url || (om.options && om.options.url);
+      if (host) {
+        return {
+          name: layerName,
+          title: (om.options && (om.options.title || om.options.layers)) || layerName,
+          host: host,
+        };
       }
     }
 
@@ -685,7 +869,7 @@ ${placemarks}</Document>
           geoProcessingManager.displayResult(clippedGeoJSON, drawnShape);
         }
 
-        mapa.deleteLayer(drawnShape.name || drawnShape.id);
+        this.cleanupDrawnShape(drawnShape);
         new UserMessage("Capa recortada y descargada exitosamente.", true, "information");
         return;
       }
@@ -765,11 +949,7 @@ ${placemarks}</Document>
       }
 
       // Eliminar polígono de selección del mapa
-      if (drawnShape && drawnShape.name) {
-        mapa.deleteLayer(drawnShape.name);
-      } else if (drawnShape && drawnShape.id) {
-        mapa.deleteLayer(drawnShape.id);
-      }
+      this.cleanupDrawnShape(drawnShape);
 
       new UserMessage("Capa vectorial recortada y descargada exitosamente.", true, "information");
     } catch (err) {

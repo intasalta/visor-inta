@@ -194,14 +194,27 @@ class UImf {
     btnCapa.innerHTML = "Agregar Capa";
     btnCapa.onclick = function () {
       if (control_btn_add_layer) {
+        const count = currentLayers.length;
         addLayersfromFiles();
         new UserMessage(`Capas agregadas exitosamente.`, true, "information");
-        btnCapa.className = "ag-btn ag-btn-disabled";
-      }
+        
+        let alertMsg = document.getElementById("file-upload-success-alert");
+        if (!alertMsg) {
+          alertMsg = document.createElement("div");
+          alertMsg.id = "file-upload-success-alert";
+          alertMsg.className = "alert alert-success";
+          alertMsg.style = "margin: 10px auto 5px auto; width: 90%; padding: 8px 12px; font-size: 13px; text-align: center; font-weight: 600; border-radius: 4px; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb;";
+          btnCapa.after(alertMsg);
+        }
+        alertMsg.innerHTML = `<i class="fa fa-check-circle" style="margin-right:6px;"></i>¡Capa${count > 1 ? "s agregadas" : " agregada"} con éxito!`;
+        alertMsg.style.display = "block";
+        setTimeout(() => {
+          if (alertMsg) alertMsg.style.display = "none";
+        }, 5000);
 
-      // if (control_btn_add_layer) { old version
-      //   addLayersfromFiles()
-      // }
+        btnCapa.className = "ag-btn ag-btn-disabled";
+        control_btn_add_layer = false;
+      }
     };
 
     // mainIcons
@@ -212,6 +225,13 @@ class UImf {
     mainContainerFile.append(logo_upload);
     mainContainerFile.append(section_load);
     mainContainerFile.append(btnCapa);
+
+    let addedContainer = document.createElement("div");
+    addedContainer.id = "added-files-section";
+    addedContainer.style = "width:100%; margin-top:10px; border-top:1px solid #ddd; padding-top:10px;";
+    mainContainerFile.append(addedContainer);
+
+    this.renderAddedLayers(addedContainer);
 
     return mainContainerFile;
     // document.body.appendChild(divContainer);
@@ -430,6 +450,184 @@ class UImf {
       }
     });
   }
+
+  zoomToLayer(layerId) {
+    const lyr = (typeof addedLayers !== "undefined" ? addedLayers : []).find(
+      (l) => l.id === layerId
+    );
+    if (lyr && lyr.layer && typeof mapa !== "undefined") {
+      try {
+        if (typeof mapa.centerLayer === "function") {
+          mapa.centerLayer(lyr.layer);
+          return;
+        }
+        const bounds = L.geoJSON(lyr.layer).getBounds();
+        if (bounds && bounds.isValid()) {
+          mapa.fitBounds(bounds, { maxZoom: 16 });
+          return;
+        }
+      } catch (err) {
+        console.warn("Error centrando en capa con GeoJSON:", err);
+      }
+    }
+
+    if (typeof mapa !== "undefined" && mapa.groupLayers && mapa.groupLayers[layerId]) {
+      const grp = mapa.groupLayers[layerId];
+      try {
+        if (Array.isArray(grp) && grp.length > 0) {
+          if (grp[0] && typeof grp[0].getBounds === "function") {
+            const fg = L.featureGroup(grp);
+            mapa.fitBounds(fg.getBounds(), { maxZoom: 16 });
+            return;
+          }
+          const leafLayers = [];
+          grp.forEach((name) => {
+            if (mapa.layers && mapa.layers[name]) {
+              leafLayers.push(mapa.layers[name]);
+            }
+          });
+          if (leafLayers.length > 0) {
+            const fg = L.featureGroup(leafLayers);
+            mapa.fitBounds(fg.getBounds(), { maxZoom: 16 });
+            return;
+          }
+        } else if (grp.getBounds) {
+          mapa.fitBounds(grp.getBounds(), { maxZoom: 16 });
+          return;
+        } else if (grp.getLatLng) {
+          mapa.setView(grp.getLatLng(), 14);
+          return;
+        }
+      } catch (err) {
+        console.warn("No se pudo centrar en la capa:", err);
+      }
+    }
+  }
+
+  renderAddedLayers(container) {
+    if (!container) {
+      container = document.getElementById("added-files-section");
+    }
+    if (!container) return;
+
+    container.innerHTML = "";
+
+    const fileLayers = (typeof addedLayers !== "undefined" ? addedLayers : []).filter(
+      (l) => l.type === "file" || l.section === "Archivos" || (l.layer && !l.process && l.type !== "WMS")
+    );
+
+    if (fileLayers.length === 0) {
+      return;
+    }
+
+    let header = document.createElement("div");
+    header.style = "display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; padding:0 4px;";
+    header.innerHTML = `
+      <span style="font-weight:600; font-size:13px; color:#333;">
+        <i class="fa-solid fa-folder-open" style="margin-right:6px; color:#680205;"></i>Capas agregadas
+      </span>
+      <span class="badge" style="background-color:#680205; font-size:11px;">${fileLayers.length}</span>
+    `;
+    container.appendChild(header);
+
+    let list = document.createElement("div");
+    list.className = "added-layers-list";
+    list.style = "display:flex; flex-direction:column; gap:6px; max-height:180px; overflow-y:auto; padding-right:4px;";
+
+    fileLayers.forEach((lyr) => {
+      let item = document.createElement("div");
+      item.id = "added-modal-item-" + lyr.id;
+      item.style = "display:flex; align-items:center; justify-content:space-between; background:#fdfdfd; border:1px solid #e0e0e0; border-radius:4px; padding:6px 10px; font-size:12px;";
+
+      let left = document.createElement("div");
+      left.style = "display:flex; align-items:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:65%;";
+
+      let check = document.createElement("input");
+      check.type = "checkbox";
+      check.checked = !!lyr.isActive;
+      check.title = lyr.isActive ? "Desactivar de la vista" : "Activar en la vista";
+      check.style = "margin:0 8px 0 0; cursor:pointer;";
+      check.onchange = () => {
+        if (typeof clickGeometryLayer === "function") {
+          clickGeometryLayer(lyr.id);
+        }
+      };
+
+      let icon = document.createElement("i");
+      icon.className = "fas fa-file-alt";
+      icon.style = "margin-right:6px; color:#888;";
+
+      let titleSpan = document.createElement("span");
+      titleSpan.innerText = lyr.name || lyr.file_name || lyr.id;
+      titleSpan.title = `${lyr.file_name || lyr.name} (Clic para centrar mapa)`;
+      titleSpan.style = "cursor:pointer; font-weight:500; overflow:hidden; text-overflow:ellipsis;";
+      titleSpan.onclick = () => {
+        this.zoomToLayer(lyr.id);
+      };
+
+      left.appendChild(check);
+      left.appendChild(icon);
+      left.appendChild(titleSpan);
+
+      let right = document.createElement("div");
+      right.style = "display:flex; align-items:center; gap:4px;";
+
+      let btnZoom = document.createElement("button");
+      btnZoom.type = "button";
+      btnZoom.className = "ag-btn ag-btn-secondary";
+      btnZoom.title = "Zoom a capa";
+      btnZoom.style = "padding:3px 6px; font-size:11px; line-height:1;";
+      btnZoom.innerHTML = '<i class="fas fa-search-plus"></i>';
+      btnZoom.onclick = (e) => {
+        e.stopPropagation();
+        this.zoomToLayer(lyr.id);
+      };
+
+      let btnDownload = document.createElement("button");
+      btnDownload.type = "button";
+      btnDownload.className = "ag-btn ag-btn-secondary";
+      btnDownload.title = "Descargar capa";
+      btnDownload.style = "padding:3px 6px; font-size:11px; line-height:1;";
+      btnDownload.innerHTML = '<i class="fas fa-download"></i>';
+      btnDownload.onclick = (e) => {
+        e.stopPropagation();
+        if (typeof mapa !== "undefined" && typeof mapa.downloadMultiLayerGeoJSON === "function") {
+          mapa.downloadMultiLayerGeoJSON(lyr.id, lyr.name, true);
+        }
+      };
+
+      let btnDelete = document.createElement("button");
+      btnDelete.type = "button";
+      btnDelete.className = "ag-btn ag-btn-secondary";
+      btnDelete.title = "Eliminar capa";
+      btnDelete.style = "padding:3px 6px; font-size:11px; line-height:1; color:#c0392b;";
+      btnDelete.innerHTML = '<i class="fas fa-trash-alt"></i>';
+      btnDelete.onclick = (e) => {
+        e.stopPropagation();
+        if (typeof deleteLayerGeometry === "function") {
+          deleteLayerGeometry(lyr.id);
+        }
+        delFileItembyID(lyr.id);
+        if (typeof showTotalNumberofLayers === "function") {
+          showTotalNumberofLayers();
+        }
+        if (typeof updateNumberofLayers === "function") {
+          updateNumberofLayers(lyr.section || "Archivos");
+        }
+        this.renderAddedLayers(container);
+      };
+
+      right.appendChild(btnZoom);
+      right.appendChild(btnDownload);
+      right.appendChild(btnDelete);
+
+      item.appendChild(left);
+      item.appendChild(right);
+      list.appendChild(item);
+    });
+
+    container.appendChild(list);
+  }
 }
 
 let uimodalfs = new UImf();
@@ -536,6 +734,9 @@ function addLayersfromFiles() {
   });
   currentLayers = [];
   showTotalNumberofLayers();
+  if (typeof uimodalfs !== "undefined" && typeof uimodalfs.renderAddedLayers === "function") {
+    uimodalfs.renderAddedLayers();
+  }
 }
 
 /**

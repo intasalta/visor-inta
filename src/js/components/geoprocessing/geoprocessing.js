@@ -361,6 +361,29 @@ class Geoprocessing {
         let resultGeoJson = mapa.createLayerFromGeoJSON(result, layername);
         addLayerToAllGroups(resultGeoJson, layername);
 
+        const isConsultActive =
+          (typeof window.isConsultActive !== "undefined" &&
+            window.isConsultActive === true) ||
+          (typeof window.consultDataBtnClose !== "undefined" &&
+            window.consultDataBtnClose === false) ||
+          (typeof consultDataBtnClose !== "undefined" &&
+            consultDataBtnClose === false);
+
+        if (isConsultActive) {
+          const makeLayerActive = (lyr) => {
+            if (!lyr) return;
+            lyr.activeData = true;
+            if (typeof lyr.eachLayer === "function") {
+              lyr.eachLayer(makeLayerActive);
+            }
+          };
+          if (Array.isArray(resultGeoJson)) {
+            resultGeoJson.forEach(makeLayerActive);
+          } else {
+            makeLayerActive(resultGeoJson);
+          }
+        }
+
         if (mapa.editableLayers.polygon) {
           mapa.editableLayers.polygon.forEach((lyr) => {
             if (lyr.id === layername) {
@@ -774,8 +797,11 @@ class Geoprocessing {
       gestorMenu.activeLayers.forEach((layerName) => {
         if (gestorMenu.availableBaseLayers && gestorMenu.availableBaseLayers.includes(layerName)) return;
         if (typeof gestorMenu.layerIsWmts === "function" && gestorMenu.layerIsWmts(layerName)) return;
-        const parts = layerName.split(":");
-        const isRaster = parts.length === 2 && parts[1].length > 40;
+        let isRaster = false;
+        try {
+          const ld = gestorMenu.getLayerData(layerName);
+          if (ld && ld.capa && ld.capa.tipo === "raster") isRaster = true;
+        } catch (e) {}
         if (!isRaster && !existingValues.has(layerName)) {
           let title = layerName;
           try {
@@ -789,6 +815,32 @@ class Geoprocessing {
           existingValues.add(layerName);
         }
       });
+
+      if (typeof addedLayers !== "undefined") {
+        addedLayers.forEach((lyr) => {
+          if (
+            lyr.isActive &&
+            (lyr.type === "WMS" ||
+              lyr.type === "geoprocess" ||
+              lyr.type === "geojson" ||
+              lyr.type === "shp" ||
+              lyr.type === "kml")
+          ) {
+            const lyrId = lyr.name || lyr.id;
+            if (!existingValues.has(lyrId)) {
+              const opt = document.createElement("option");
+              opt.value = lyrId;
+              opt.text =
+                lyr.title ||
+                (lyr.layer && lyr.layer.title) ||
+                lyr.name ||
+                lyr.id;
+              select.appendChild(opt);
+              existingValues.add(lyrId);
+            }
+          }
+        });
+      }
     }
 
     if (select && select.options && select.options.length > 1) {
@@ -996,8 +1048,11 @@ class Geoprocessing {
                 // Primary: getAllActiveLayers() from Leaflet layers
                 getAllActiveLayers().forEach((layer) => {
                   if (layer && gestorMenu.layerIsWmts(layer.name) == false) {
-                    const parts = layer.name.split(":");
-                    const isRaster = parts.length === 2 && parts[1].length > 40;
+                    let isRaster = false;
+                    try {
+                      const ld = gestorMenu.getLayerData(layer.name);
+                      if (ld && ld.capa && ld.capa.tipo === "raster") isRaster = true;
+                    } catch (e) {}
                     if (!isRaster) {
                       try {
                         const ld = gestorMenu.getLayerData(layer.name);
@@ -1021,8 +1076,11 @@ class Geoprocessing {
                   gestorMenu.activeLayers.forEach((layerName) => {
                     if (gestorMenu.availableBaseLayers && gestorMenu.availableBaseLayers.includes(layerName)) return;
                     if (typeof gestorMenu.layerIsWmts === "function" && gestorMenu.layerIsWmts(layerName)) return;
-                    const parts = layerName.split(":");
-                    const isRaster = parts.length === 2 && parts[1].length > 40;
+                    let isRaster = false;
+                    try {
+                      const ld = gestorMenu.getLayerData(layerName);
+                      if (ld && ld.capa && ld.capa.tipo === "raster") isRaster = true;
+                    } catch (e) {}
                     if (!isRaster && !addedLayerNames.has(layerName)) {
                       addedLayerNames.add(layerName);
                       let title = layerName;
@@ -1590,9 +1648,13 @@ class Geoprocessing {
     }
 
     if (select && this.geoprocessId === "clipLayer") {
-      const parts = layerName.split(":");
-      const isRaster = parts.length === 2 && parts[1].length > 40;
-      if (addToList && gestorMenu.layerIsWmts(layerName) == false && !isRaster) {
+      let isRaster = false;
+      try {
+        const ld = gestorMenu.getLayerData(layerName);
+        if (ld && ld.capa && ld.capa.tipo === "raster") isRaster = true;
+      } catch (e) {}
+      const isWmts = typeof gestorMenu !== "undefined" && typeof gestorMenu.layerIsWmts === "function" ? gestorMenu.layerIsWmts(layerName) : false;
+      if (addToList && !isWmts && !isRaster) {
         let exists = false;
         for (let i = 0; i < select.length; i++) {
           if (select[i].value === layerName) exists = true;
