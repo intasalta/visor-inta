@@ -994,16 +994,21 @@ $("body").on("pluginLoad", function (event, plugin) {
             $(".context-quehay").slideUp();
           });
 
+          let activeMapContextMenuPopup = null;
+
           mapa.on("dragend", (e) => {
-            let contextPopup = null;
-            const contextMenu = new ContextMenu();
+            if (activeMapContextMenuPopup) {
+              mapa.closePopup(activeMapContextMenuPopup);
+              activeMapContextMenuPopup = null;
+            }
             $(".context-quehay").slideUp();
           });
 
           mapa.on("click", (e) => {
-            let contextPopup = null;
-            const contextMenu = new ContextMenu();
-            mapa.closePopup(contextPopup);
+            if (activeMapContextMenuPopup) {
+              mapa.closePopup(activeMapContextMenuPopup);
+              activeMapContextMenuPopup = null;
+            }
             $(".context-quehay").slideUp();
           });
 
@@ -1161,6 +1166,7 @@ $("body").on("pluginLoad", function (event, plugin) {
             })
               .setLatLng(e.latlng)
               .setContent(contextMenu.menu);
+            activeMapContextMenuPopup = contextPopup;
             mapa.openPopup(contextPopup);
           });
 
@@ -1394,6 +1400,7 @@ $("body").on("pluginLoad", function (event, plugin) {
               })
                 .setLatLng(e.latlng)
                 .setContent(contextMenu.menu);
+              activeMapContextMenuPopup = contextPopup;
               mapa.openPopup(contextPopup);
               L.DomEvent.stopPropagation(e);
             });
@@ -2593,39 +2600,81 @@ $("body").on("pluginLoad", function (event, plugin) {
           };
 
           mapa.showLayer = (layer) => {
+            if (!layer) return;
+            if (typeof layer === "object" && layer !== null) {
+              drawnItems.addLayer(layer);
+              return;
+            }
+            if (typeof layer !== "string") return;
             const type = layer.split("_")[0];
-            if (mapa.editableLayers.hasOwnProperty(type)) {
+            if (mapa.editableLayers && mapa.editableLayers.hasOwnProperty(type)) {
               const lyr = mapa.editableLayers[type].find(
-                (lyr) => lyr.name === layer,
+                (lyr) => lyr && (lyr.name === layer || lyr.id === layer),
               );
               if (lyr) {
                 drawnItems.addLayer(lyr);
               }
+            } else if (mapa.editableLayers) {
+              Object.values(mapa.editableLayers).forEach((list) => {
+                if (Array.isArray(list)) {
+                  const lyr = list.find((item) => item && (item.name === layer || item.id === layer));
+                  if (lyr) {
+                    drawnItems.addLayer(lyr);
+                  }
+                }
+              });
             }
           };
 
           mapa.hideLayer = (layer) => {
-            Object.values(drawnItems._layers).forEach((lyr) => {
-              if (layer === lyr.name) {
-                drawnItems.removeLayer(lyr);
-                return;
-              }
-            });
+            if (!layer) return;
+            if (typeof layer === "object" && layer !== null) {
+              drawnItems.removeLayer(layer);
+              return;
+            }
+            if (typeof drawnItems !== "undefined" && drawnItems && drawnItems._layers) {
+              Object.values(drawnItems._layers).forEach((lyr) => {
+                if (lyr && (layer === lyr.name || layer === lyr.id)) {
+                  drawnItems.removeLayer(lyr);
+                }
+              });
+            }
           };
 
           mapa.showGroupLayer = (group) => {
-            if (mapa.groupLayers.hasOwnProperty(group)) {
+            if (!group) return;
+            if (mapa.groupLayers && mapa.groupLayers.hasOwnProperty(group)) {
               mapa.groupLayers[group].forEach((layer) => {
                 mapa.showLayer(layer);
+              });
+            }
+            if (mapa.editableLayers) {
+              Object.values(mapa.editableLayers).forEach((list) => {
+                if (Array.isArray(list)) {
+                  list.forEach((lyr) => {
+                    if (lyr && (lyr.id === group || lyr.name === group)) {
+                      drawnItems.addLayer(lyr);
+                    }
+                  });
+                }
               });
             }
           };
 
           mapa.hideGroupLayer = (group) => {
-            if (mapa.groupLayers.hasOwnProperty(group))
+            if (!group) return;
+            if (mapa.groupLayers && mapa.groupLayers.hasOwnProperty(group)) {
               mapa.groupLayers[group].forEach((layer) => {
                 mapa.hideLayer(layer);
               });
+            }
+            if (typeof drawnItems !== "undefined" && drawnItems && drawnItems._layers) {
+              Object.values(drawnItems._layers).forEach((lyr) => {
+                if (lyr && (lyr.id === group || lyr.name === group)) {
+                  drawnItems.removeLayer(lyr);
+                }
+              });
+            }
           };
 
           /**
@@ -2633,44 +2682,74 @@ $("body").on("pluginLoad", function (event, plugin) {
            * @param {string} layerName - The name of the layer to delete.
            */
           mapa.deleteLayer = (layerName, id) => {
-            const type = layerName.split("_")[0]; // Extract layer type from layerName
+            if (!layerName) return;
+            const type = typeof layerName === "string" ? layerName.split("_")[0] : "";
 
-            const idx = mapa.editableLayers[type].findIndex(
-              (lyr) => lyr.name === layerName,
-            ); // Find the index of the layer to delete in the editableLayers array
+            if (mapa.editableLayers && mapa.editableLayers[type]) {
+              const idx = mapa.editableLayers[type].findIndex(
+                (lyr) => lyr && (lyr.name === layerName || lyr.id === layerName),
+              );
+              if (idx >= 0) {
+                drawnItems.removeLayer(mapa.editableLayers[type][idx]);
+                mapa.editableLayers[type].splice(idx, 1);
+              }
+            } else if (mapa.editableLayers) {
+              Object.keys(mapa.editableLayers).forEach((t) => {
+                const list = mapa.editableLayers[t];
+                if (Array.isArray(list)) {
+                  const idx = list.findIndex(
+                    (lyr) => lyr && (lyr.name === layerName || lyr.id === layerName),
+                  );
+                  if (idx >= 0) {
+                    drawnItems.removeLayer(list[idx]);
+                    list.splice(idx, 1);
+                  }
+                }
+              });
+            }
 
-            // If the layer exists in the editableLayers array, remove it from the map and editableLayers array
-            if (idx >= 0) {
-              drawnItems.removeLayer(mapa.editableLayers[type][idx]);
-              mapa.editableLayers[type].splice(idx, 1);
+            // Remove directly from drawnItems
+            if (typeof drawnItems !== "undefined" && drawnItems && drawnItems._layers) {
+              Object.values(drawnItems._layers).forEach((lyr) => {
+                if (lyr && (lyr.name === layerName || lyr.id === layerName)) {
+                  drawnItems.removeLayer(lyr);
+                }
+              });
             }
 
             // Remove the layer from all groupLayers arrays
-            Object.values(mapa.groupLayers).forEach((group) => {
-              const idx = group.findIndex((lyr) => lyr === layerName);
-              if (idx >= 0) {
-                group.splice(idx, 1);
-              }
-            });
+            if (mapa.groupLayers) {
+              Object.values(mapa.groupLayers).forEach((group) => {
+                if (Array.isArray(group)) {
+                  const idx = group.findIndex((lyr) => lyr === layerName);
+                  if (idx >= 0) {
+                    group.splice(idx, 1);
+                  }
+                }
+              });
+            }
 
             // Remove the layer from the addedLayers array, if it exists
-            addedLayers.forEach((lyr) => {
-              const idx = lyr.layer.features?.findIndex(
-                (e) => e.properties.name === layerName,
-              );
-              if (geoProcessingManager)
-                geoProcessingManager.updateLayerSelect(layerName, false);
-              if (idx >= 0) {
-                lyr.layer.features.splice(idx, 1);
-                // If the addedLayers array is now empty, remove it from the addedLayers array and update the UI
-              } else {
-                delFileItembyID(id);
-              }
-              if (lyr.layer.features && lyr.layer.features.length === 0) {
-                addedLayers.splice(addedLayers.indexOf(lyr), 1);
-              }
-              updateNumberofLayers(lyr.section);
-            });
+            if (typeof addedLayers !== "undefined") {
+              addedLayers.forEach((lyr) => {
+                const idx = lyr.layer?.features?.findIndex(
+                  (e) => e.properties?.name === layerName,
+                );
+                if (geoProcessingManager)
+                  geoProcessingManager.updateLayerSelect(layerName, false);
+                if (idx >= 0) {
+                  lyr.layer.features.splice(idx, 1);
+                } else if (id && typeof delFileItembyID === "function") {
+                  delFileItembyID(id);
+                }
+                if (lyr.layer?.features && lyr.layer.features.length === 0) {
+                  addedLayers.splice(addedLayers.indexOf(lyr), 1);
+                }
+                if (typeof updateNumberofLayers === "function" && lyr.section) {
+                  updateNumberofLayers(lyr.section);
+                }
+              });
+            }
 
             mapa.methodsEvents["delete-layer"].forEach((method) =>
               method(mapa.editableLayers),
@@ -3037,17 +3116,55 @@ $("body").on("pluginLoad", function (event, plugin) {
           };
 
           function addInfoAndMethodsToLayer(layer) {
-            let type = layer.type;
-            layer.name = nameForLayer(type);
-            consultDataBtnClose
-              ? (layer.activeData = false)
-              : (layer.activeData = true);
+            if (!layer) return;
+            let type = layer.type || "polygon";
+            layer.type = type;
+            if (!mapa.editableLayers[type]) {
+              mapa.editableLayers[type] = [];
+            }
+            layer.name = layer.name || nameForLayer(type);
+            const isConsultClosed =
+              typeof window.consultDataBtnClose !== "undefined"
+                ? window.consultDataBtnClose
+                : typeof consultDataBtnClose !== "undefined"
+                ? consultDataBtnClose
+                : true;
+            layer.activeData = !isConsultClosed;
 
             mapa.editableLayers[type].push(layer);
 
+            layer.off("click", getVectorData);
             layer.on({
               click: getVectorData,
             });
+
+            const bindLayerDataAndEvents = (subLyr) => {
+              if (!subLyr) return;
+              subLyr.id = layer.id || subLyr.id;
+              subLyr._parent = layer;
+              subLyr.name = layer.name;
+              subLyr.type = layer.type;
+              subLyr.data = layer.data || subLyr.data;
+              subLyr.feature =
+                subLyr.feature ||
+                (layer.data && layer.data.geoJSON) ||
+                layer.feature;
+              subLyr.activeData = layer.activeData;
+              if (typeof subLyr.off === "function") {
+                subLyr.off("click", getVectorData);
+              }
+              if (typeof subLyr.on === "function") {
+                subLyr.on({ click: getVectorData });
+              }
+              if (typeof subLyr.eachLayer === "function") {
+                subLyr.eachLayer(bindLayerDataAndEvents);
+              }
+            };
+
+            if (layer.eachLayer) {
+              layer.eachLayer(bindLayerDataAndEvents);
+            }
+
             layer.getGeoJSON = () => {
               return mapa.getLayerGeoJSON(layer.name);
             };
