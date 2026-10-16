@@ -3675,21 +3675,41 @@ class Menu_UI {
 
   addSection(name) {
     let groupnamev = clearSpecialChars(name);
-    let itemnew = document.createElement("div");
+    let itemnew = document.getElementById(`lista-${groupnamev}`);
+    if (itemnew) {
+      $(`#${groupnamev}-content`).collapse("show");
+      return;
+    }
+    itemnew = document.createElement("div");
+    itemnew.id = `lista-${groupnamev}`;
+    itemnew.className = "menu5 panel-default";
     itemnew.innerHTML = `
-        <div id="lista-${groupnamev}" class="menu5 panel-default">
-        <div class="panel-heading" data-toggle="collapse" data-target="#${groupnamev}-content" aria-expanded="false">
-            <h4 class="panel-title">
-            <a id="${groupnamev}-a" data-parent="#accordion1" class="item-group-title">${name}</a>
+        <div class="panel-heading" data-toggle="collapse" data-target="#${groupnamev}-content" aria-expanded="true" style="cursor:pointer;">
+            <h4 class="panel-title" style="display:flex; align-items:center; justify-content:space-between; margin:0;">
+              <span id="${groupnamev}-a" class="item-group-title" style="cursor:pointer; font-weight:600;">
+                <i class="fa-solid fa-folder-open" style="margin-right:6px; color:#680205;"></i>${name}
+              </span>
+              <i class="fas fa-chevron-down toggle-icon" style="font-size:12px; transition:transform 0.2s;"></i>
             </h4>
         </div>
-        <div id='${groupnamev}-content' class="panel-collapse collapse">
-            <div class="panel-body" id ="${groupnamev}-panel-body"></div>
-        </div>
+        <div id='${groupnamev}-content' class="panel-collapse collapse in">
+            <div class="panel-body" id ="${groupnamev}-panel-body" style="padding: 4px 6px;"></div>
         </div>`;
 
     let searchForm = document.getElementById("searchForm");
-    searchForm.after(itemnew);
+    if (searchForm) {
+      searchForm.after(itemnew);
+    } else {
+      let sidebar = document.getElementById("sidebar");
+      if (sidebar) sidebar.prepend(itemnew);
+    }
+
+    let heading = itemnew.querySelector(".panel-heading");
+    if (heading) {
+      heading.onclick = function (e) {
+        $(`#${groupnamev}-content`).collapse("toggle");
+      };
+    }
   }
 
   addParentSection(parent, child) {
@@ -3765,6 +3785,8 @@ class Menu_UI {
     let id_options_container = "opt-c-" + id;
     if (!main) {
       this.addSection(groupnamev);
+    } else {
+      $(`#${groupnamev}-content`).collapse("show");
     }
     let content = document.getElementById(groupnamev + "-panel-body");
     let layer_container = document.createElement("div");
@@ -3775,7 +3797,7 @@ class Menu_UI {
     layer_item.id = "flc-" + id;
     if (isActive) {
       layer_item.className = "file-layer active";
-    } else if (!isActive) {
+    } else {
       layer_item.className = "file-layer";
     }
 
@@ -3788,14 +3810,14 @@ class Menu_UI {
 
     let layer_name = document.createElement("div");
     layer_name.className = "file-layername";
-    layer_name.innerHTML = "<a>" + textName + "</a>";
+    layer_name.innerHTML = "<a style='cursor:pointer; font-weight:500; text-decoration:none;'>" + textName + "</a>";
     layer_name.title = fileName;
     layer_name.onclick = function () {
       clickGeometryLayer(id);
     };
 
     let options = document.createElement("div");
-    options.style = "width:10$;padding-right:5px;cursor:pointer;";
+    options.style = "width:10%;padding-right:5px;cursor:pointer;";
     options.className = "btn-group";
     options.role = "group";
     options.id = id_options_container;
@@ -3856,52 +3878,18 @@ class Menu_UI {
     let zoom_layer_opt = document.createElement("li");
     zoom_layer_opt.innerHTML = `<a style="color:#474b4e;" href="#"><i class="fa fa-search-plus" aria-hidden="true" style="width:20px;"></i>Zoom a capa</a>`;
     zoom_layer_opt.onclick = function () {
-      addedLayers.forEach((lyr) => {
-        if (lyr.id === id) {
-          mapa.centerLayer(lyr.layer);
-        }
-      });
+      const lyr = (typeof addedLayers !== "undefined" ? addedLayers : []).find((l) => l.id === id);
+      if (lyr && lyr.layer && typeof mapa !== "undefined" && typeof mapa.centerLayer === "function") {
+        mapa.centerLayer(lyr.layer);
+      } else if (typeof uimodalfs !== "undefined" && typeof uimodalfs.zoomToLayer === "function") {
+        uimodalfs.zoomToLayer(id);
+      }
     };
-
-    /* let query_opt = document.createElement("li")
-            query_opt.innerHTML =`<a style="color:#474b4e;" href="#"><i class="far fa-question-circle" aria-hidden="true" style="width:20px;"></i>Ver datos</a>`
-            query_opt.onclick = function(){
-                console.log('add a popup here!')
-                addedLayers.forEach( lyr => {
-                    if( lyr.id === id ) {
-                        //addedLayers[0].id
-                        lyr.bindPopup(lyr.layer.features[0].properties);
-                        mapa.editableLayers.polygon[0].bindPopup
-                    }
-                });
-            } */
-
-    /* let style_opt = document.createElement("li")
-            style_opt.innerHTML =`<a style="color:#474b4e;" href="#"><i class="fas fa-paint-brush" aria-hidden="true" style="width:20px;"></i>Editar estilo</a>`
-            style_opt.onclick = function(){
-                console.log('edit style!');
-            } */
-
-    /* let chart_opt = document.createElement("li")
-            chart_opt.innerHTML =`<a style="color:#474b4e;" href="#"><i class="fas fa-chart-pie" aria-hidden="true" style="width:20px;"></i>Editar estilo</a>`
-            chart_opt.onclick = function(){
-                console.log('add a popup here!');
-            } */
-
-    /* let copy_opt = document.createElement("li")
-            copy_opt.innerHTML =`<a style="color:#474b4e;" href="#"><i class="fas fa-copy" aria-hidden="true" style="width:20px;"></i>Editar estilo</a>`
-            copy_opt.onclick = function(){
-                console.log('add a popup here!');
-            } */
 
     mainul.append(zoom_layer_opt);
     mainul.append(edit_name_opt);
     mainul.append(edit_data_opt);
-    
-    const isVector = capaEsVector(layer);
-    if (isVector) {
-      mainul.append(download_opt);
-    }
+    mainul.append(download_opt);
 
     //mainul.append(query_opt)
     //mainul.append(copy_opt)

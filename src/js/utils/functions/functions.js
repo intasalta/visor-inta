@@ -341,13 +341,13 @@ function loadWmsTplAux(objLayer) {
     delete overlayMaps[layer];
   } else {
     createWmsLayer(objLayer);
-    if (consultDataBtnClose == false) {
-      overlayMaps[layer]._source.options.identify = true;
-    } else if (consultDataBtnClose == true) {
-      overlayMaps[layer]._source.options.identify = false;
-    } else {
-      overlayMaps[layer]._source.options.identify = false;
-    }
+    const isConsultClosed =
+      typeof window.consultDataBtnClose !== "undefined"
+        ? window.consultDataBtnClose
+        : typeof consultDataBtnClose !== "undefined"
+        ? consultDataBtnClose
+        : true;
+    overlayMaps[layer]._source.options.identify = !isConsultClosed;
     overlayMaps[layer].addTo(mapa);
   }
 }
@@ -849,15 +849,24 @@ function clickGeometryLayer(layer) {
 
   addedLayers.forEach((lyr) => {
     if (lyr.id === layer) {
-      if (aux.className === "file-layer active") {
-        aux.className = "file-layer";
-        mapa.hideGroupLayer(layer);
-        lyr.isActive = false;
-      } else {
-        aux.className = "file-layer active";
-        mapa.showGroupLayer(layer);
-        lyr.isActive = true;
+      const willBeActive = !lyr.isActive;
+      lyr.isActive = willBeActive;
+
+      if (aux) {
+        aux.className = willBeActive ? "file-layer active" : "file-layer";
       }
+
+      if (willBeActive) {
+        mapa.showGroupLayer(layer);
+      } else {
+        mapa.hideGroupLayer(layer);
+      }
+
+      const modalCheck = document.querySelector("#added-modal-item-" + layer + " input[type='checkbox']");
+      if (modalCheck) {
+        modalCheck.checked = willBeActive;
+      }
+
       updateNumberofLayers(lyr.section);
     }
   });
@@ -884,14 +893,13 @@ function clickWMSLayer(layer, layer_item, fileName) {
     layer.active = true;
 
     createImportWmsLayer(layer);
-
-    if (consultDataBtnClose == false) {
-      overlayMaps[layer.name]._source.options.identify = true;
-    } else if (consultDataBtnClose == true) {
-      overlayMaps[layer.name]._source.options.identify = false;
-    } else {
-      overlayMaps[layer.name]._source.options.identify = false;
-    }
+    const isConsultClosed =
+      typeof window.consultDataBtnClose !== "undefined"
+        ? window.consultDataBtnClose
+        : typeof consultDataBtnClose !== "undefined"
+        ? consultDataBtnClose
+        : true;
+    overlayMaps[layer.name]._source.options.identify = !isConsultClosed;
     overlayMaps[layer.name].addTo(mapa);
 
     //Original
@@ -1461,24 +1469,112 @@ function getAllActiveLayers() {
   return allActiveLayers;
 }
 
+if (typeof ucwords !== "function") {
+  window.ucwords = function (str) {
+    if (!str) return "";
+    return String(str).charAt(0).toUpperCase() + String(str).slice(1);
+  };
+}
+
 function getVectorData(e) {
-  if (e.target.activeData === true) {
+  if (e && e.originalEvent) {
+    if (e.originalEvent._vectorDataHandled) {
+      return;
+    }
+    e.originalEvent._vectorDataHandled = true;
+    if (typeof L !== "undefined" && L.DomEvent && L.DomEvent.stopPropagation) {
+      L.DomEvent.stopPropagation(e.originalEvent);
+    }
+  }
+
+  const isConsultActive =
+    (typeof window.isConsultActive !== "undefined" && window.isConsultActive === true) ||
+    (typeof window.consultDataBtnClose !== "undefined" && window.consultDataBtnClose === false) ||
+    (typeof consultDataBtnClose !== "undefined" && consultDataBtnClose === false) ||
+    (e.target && e.target.activeData === true);
+
+  if (isConsultActive || (e.target && e.target.activeData === true)) {
     let layer = e.target;
     createPopupForVector(layer, e.latlng);
   }
 }
 
 function createPopupForVector(layer, clickLatlng) {
-  let id = layer.name[0].toUpperCase() + layer.name.slice(1).toLowerCase(),
-    popupName;
-  if (layer.data.geoJSON) {
-    popupName = layer.data.geoJSON.properties.objeto;
-    popupName ? (title = popupName) : (title = id);
-  } else {
-    return;
+  let id = layer.name
+    ? layer.name[0].toUpperCase() + layer.name.slice(1).toLowerCase()
+    : "Vector";
+
+  let geoJSON = (layer.data && layer.data.geoJSON) || layer.feature || null;
+  if (!geoJSON && layer._parent) {
+    geoJSON =
+      (layer._parent.data && layer._parent.data.geoJSON) ||
+      layer._parent.feature ||
+      null;
+  }
+  if (!geoJSON && layer.id && typeof addedLayers !== "undefined") {
+    const foundAdded = addedLayers.find(
+      (al) => al.id === layer.id || al.name === layer.id
+    );
+    if (foundAdded && foundAdded.layer && foundAdded.layer.features) {
+      if (foundAdded.layer.features.length === 1) {
+        geoJSON = foundAdded.layer.features[0];
+      } else if (clickLatlng && typeof turf !== "undefined") {
+        const pt = turf.point([clickLatlng.lng, clickLatlng.lat]);
+        const matchingFeat = foundAdded.layer.features.find((f) => {
+          try {
+            if (f.geometry && (f.geometry.type === "Polygon" || f.geometry.type === "MultiPolygon")) {
+              return turf.booleanPointInPolygon(pt, f);
+            }
+          } catch (err) {}
+          return false;
+        });
+        geoJSON = matchingFeat || foundAdded.layer.features[0];
+      } else {
+        geoJSON = foundAdded.layer.features[0];
+      }
+    }
   }
 
-  var infoAux = '<div class="featureInfo" id="featureInfoPopup' + id + '">';
+  // Si aún no se encontró, buscar espacialmente en addedLayers
+  if (!geoJSON && clickLatlng && typeof turf !== "undefined" && typeof addedLayers !== "undefined") {
+    const pt = turf.point([clickLatlng.lng, clickLatlng.lat]);
+    for (const al of addedLayers) {
+      if (al && al.layer && al.layer.features) {
+        const matchingFeat = al.layer.features.find((f) => {
+          try {
+            if (f.geometry && (f.geometry.type === "Polygon" || f.geometry.type === "MultiPolygon")) {
+              return turf.booleanPointInPolygon(pt, f);
+            }
+          } catch (err) {}
+          return false;
+        });
+        if (matchingFeat) {
+          geoJSON = matchingFeat;
+          if (al.name) id = al.name;
+          break;
+        }
+      }
+    }
+  }
+
+  if (!geoJSON) return;
+
+  const props = geoJSON.properties || {};
+  let title = id;
+  const possibleTitle =
+    props.objeto ||
+    props.name ||
+    props.nombre ||
+    props.Name ||
+    props.NOMBRE ||
+    props.title ||
+    props.titulo ||
+    props.id;
+  if (possibleTitle) {
+    title = possibleTitle;
+  }
+
+  var infoAux = '<div class="featureInfo" id="featureInfoPopup0">';
   infoAux += '<div class="featureGroup">';
   infoAux += '<div style="/*padding:1em*/" class="individualFeature">';
   infoAux +=
@@ -1487,30 +1583,67 @@ function createPopupForVector(layer, clickLatlng) {
     "</h4>";
   infoAux += "<ul>";
 
-  Object.keys(layer.data.geoJSON.properties).forEach(function (k) {
-    let ignoredField = templateFeatureInfoFieldException.includes(k); // checks if field is defined in data.json to be ignored in the popup
-    if (k != "bbox" && !ignoredField && k != "objeto" && k != "styles") {
-      //ignore this rows
-      infoAux += "<li>";
-      infoAux += "<b>" + ucwords(k.replace(/_/g, " ")) + ":</b>";
-      if (layer.data.geoJSON.properties[k] != null) {
-        infoAux += " " + layer.data.geoJSON.properties[k];
-      }
-      infoAux += "<li>";
+  const propKeys = Object.keys(props);
+  const hasDescWithHtml =
+    typeof props.description === "string" &&
+    (props.description.includes("<br") ||
+      props.description.includes("<table") ||
+      props.description.includes("<b>") ||
+      props.description.includes("<div"));
+
+  const formatKey = (k) => {
+    if (typeof ucwords === "function") {
+      try {
+        return ucwords(String(k).replace(/_/g, " "));
+      } catch (err) {}
     }
-  });
+    const s = String(k).replace(/_/g, " ");
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  };
+
+  if (hasDescWithHtml && propKeys.length <= 3) {
+    infoAux += `<div class="kml-desc-wrapper" style="margin: 0.5em 0; line-height: 1.4;">${props.description}</div>`;
+  } else if (propKeys.length === 0) {
+    infoAux += "<li><i>Sin atributos adicionales</i></li>";
+  } else {
+    propKeys.forEach(function (k) {
+      let ignoredField =
+        typeof templateFeatureInfoFieldException !== "undefined" &&
+        templateFeatureInfoFieldException.includes(k);
+      if (k !== "bbox" && !ignoredField && k !== "objeto" && k !== "styles") {
+        infoAux += "<li>";
+        infoAux += "<b>" + formatKey(k) + ":</b>";
+        if (props[k] != null) {
+          infoAux += " " + props[k];
+        }
+        infoAux += "</li>";
+      }
+    });
+  }
 
   infoAux += "</ul>";
   infoAux += "</div></div></div>";
-  popupInfo.push(infoAux); //Add info for popup
+  popupInfo = [infoAux];
+  popupInfoToPaginate = [...popupInfo];
+  popupInfoPage = 0;
 
-  let center;
-  if (layer._latlng) {
-    center = layer._latlng;
-  } else {
-    center = clickLatlng;
+  let center =
+    clickLatlng ||
+    layer._latlng ||
+    (layer.getBounds ? layer.getBounds().getCenter() : (typeof mapa !== "undefined" && mapa ? mapa.getCenter() : null));
+
+  if (!center) return;
+
+  latlngTmp = center;
+  const popupHtml = paginateFeatureInfo(popupInfo, 0, false, false);
+  if (typeof L !== "undefined" && L.popup) {
+    L.popup({ autoPan: true, closeButton: true, autoClose: true })
+      .setLatLng(center)
+      .setContent(popupHtml)
+      .openOn(mapa);
+  } else if (typeof mapa !== "undefined" && mapa && typeof mapa.openPopup === "function") {
+    mapa.openPopup(popupHtml, center);
   }
-  layer._map.openPopup(paginateFeatureInfo(popupInfo, 0, false, true), center); //Show info
 }
 
 /**
@@ -1597,7 +1730,7 @@ function createLayerByType(geoJSON, groupName) {
     type = geoJSON.geometry.type.toLowerCase(),
     options = {};
 
-  if (geoJSON.properties.hasOwnProperty("styles")) {
+  if (geoJSON.properties && geoJSON.properties.hasOwnProperty("styles")) {
     options = { ...geoJSON.properties.styles };
   }
 
@@ -1629,6 +1762,15 @@ function createLayerByType(geoJSON, groupName) {
   if (layer && (!geoJSON.properties || geoJSON.properties.type !== "label")) {
     layer.id = groupName;
     layer.data = { geoJSON };
+    layer.feature = geoJSON;
+    if (typeof layer.eachLayer === "function") {
+      layer.eachLayer((sub) => {
+        sub.id = groupName;
+        sub._parent = layer;
+        sub.feature = sub.feature || geoJSON;
+        sub.data = sub.data || { geoJSON };
+      });
+    }
   }
   return layer;
 }
@@ -1637,12 +1779,20 @@ function createLayerMultipolygon(geoJSON, layer, options) {
   try {
     const geoLayer = L.geoJSON(geoJSON, options);
     const layers = geoLayer.getLayers();
-    layer = layers[0] || geoLayer;
+    if (layers.length === 1) {
+      layer = layers[0];
+    } else if (layers.length > 1) {
+      layer = geoLayer;
+    } else {
+      layer = geoLayer;
+    }
   } catch (e) {
     const reversedCoords = reverseMultipleCoords(geoJSON.geometry.coordinates);
     layer = L.polygon(reversedCoords, options);
   }
   layer.type = "polygon";
+  layer.data = { geoJSON };
+  layer.feature = geoJSON;
   return layer;
 }
 
@@ -1679,13 +1829,32 @@ function createLayerMultipoint(geoJSON, groupName, layer) {
 }
 
 function createLayerPolygon(geoJSON, layer, options) {
-  const invertedCoords = geoJSON.geometry.coordinates[0].map((coords) => [
-    coords[1],
-    coords[0],
-  ]);
+  try {
+    const geoLayer = L.geoJSON(geoJSON, options);
+    const layers = geoLayer.getLayers();
+    if (layers.length === 1) {
+      layer = layers[0];
+      layer.type = "polygon";
+      layer.data = { geoJSON };
+      layer.feature = geoJSON;
+      return layer;
+    } else if (layers.length > 1) {
+      layer = geoLayer;
+      layer.type = "polygon";
+      layer.data = { geoJSON };
+      layer.feature = geoJSON;
+      return layer;
+    }
+  } catch (e) {}
+
+  const coords = geoJSON.geometry && geoJSON.geometry.coordinates;
+  const invertedCoords =
+    coords && coords[0] ? coords[0].map((c) => [c[1], c[0]]) : [];
 
   if (
+    geoJSON.properties &&
     geoJSON.properties.hasOwnProperty("type") &&
+    typeof geoJSON.properties.type === "string" &&
     geoJSON.properties.type.toLowerCase() === "rectangle"
   ) {
     layer = L.rectangle(invertedCoords, options);
@@ -1694,6 +1863,8 @@ function createLayerPolygon(geoJSON, layer, options) {
     layer = L.polygon(invertedCoords, options);
     layer.type = "polygon";
   }
+  layer.data = { geoJSON };
+  layer.feature = geoJSON;
   return layer;
 }
 
@@ -1884,7 +2055,9 @@ function _addLayerToAllGroups(layer, groupName) {
   drawnItems.addLayer(layer);
 
   if (mapa && mapa.editableLayers && mapa.editableLayers[type]) {
-    const exists = mapa.editableLayers[type].some((lyr) => lyr.id === layer.id);
+    const exists = mapa.editableLayers[type].some(
+      (lyr) => lyr === layer || (lyr.name && lyr.name === layer.name),
+    );
     if (!exists) {
       mapa.editableLayers[type].push(layer);
     }
@@ -1894,7 +2067,9 @@ function _addLayerToAllGroups(layer, groupName) {
     if (mapa.groupLayers[groupName] === undefined) {
       mapa.groupLayers[groupName] = [];
     }
-    mapa.groupLayers[groupName].push(layer.name);
+    if (layer.name && !mapa.groupLayers[groupName].includes(layer.name)) {
+      mapa.groupLayers[groupName].push(layer.name);
+    }
   }
 }
 
