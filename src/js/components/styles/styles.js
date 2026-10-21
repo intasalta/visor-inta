@@ -2,9 +2,9 @@ class StylesUI {
   createstyles() {
     const style = document.createElement("style");
     let minBgSize =
-      app.logo.miniHeight !== ""
-        ? app.logo.miniHeight + " " + app.logo.miniWidth
-        : "contain !important";
+      app.logo.miniHeight && app.logo.miniWidth
+        ? (app.logo.miniWidth + " " + app.logo.miniHeight)
+        : (app.logo.miniHeight ? ("auto " + app.logo.miniHeight) : (app.logo.miniWidth ? (app.logo.miniWidth + " auto") : "contain !important"));
     style.id = "main-style-ui";
     style.innerHTML = `
     :root {
@@ -86,10 +86,22 @@ class StylesUI {
     @media (max-width: 768px) {
       #top-left-logo {
         background-repeat: no-repeat;
-        background-image: url("${app.logo.srcLogoMini}");
+        background-image: url("${app.logo.srcLogoMini || app.logo.src}");
         background-size: ${minBgSize};
-        background-position: left 1px center;
+        background-position: left center;
+        height: 40px;
+        width: 105px;
+        display: inline-block;
         ${app.logo.ministyle}
+      }
+      #logo-navbar {
+        display: flex;
+        align-items: center;
+        margin-left: 2px;
+      }
+      #logoText {
+        font-size: 14px;
+        margin-left: 4px;
       }
     }
     @media (min-width: 769px) {
