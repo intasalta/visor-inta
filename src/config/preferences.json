@@ -73,9 +73,9 @@
     "width": "",
     "style": "background-size: 160px;",
     "srcLogoMini": "https://s3.inta.gob.ar/logos/svg/logo-blanco.svg",
-    "miniHeight": "40px",
-    "miniWidth": "auto",
-    "ministyle": "filter: drop-shadow(1px 1px 1px #103847); width: 100px;",
+    "miniHeight": "",
+    "miniWidth": "",
+    "ministyle": "filter: drop-shadow(1px 1px 1px #103847); width: 105px; height: 38px;",
     "link": "https://argentina.gob.ar/inta"
   },
   "logoText": {
