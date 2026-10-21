@@ -17,7 +17,7 @@
 - Captura de pantalla en formato PNG con escala.
 - Panel de ayuda con guia rápida
 - Panel de accesibilidad
-- Descargar una captura el mapa en formato PDF junto con la escala, orientacion y leyendas
+- Generación e impresión de mapas en formato PDF con ventana de configuración, vista previa en tiempo real, títulos personalizables, orientación vertical/horizontal (sin franjas blancas) y referencias equilibradas
 
 La lista de cambios está en [GitHub][]
 
