@@ -636,7 +636,9 @@
       "feature_info_format": "application/json",
       "host": "https://geo-backend.inta.gob.ar/geoserver/wms",
       "allowed_layers": [
-        "geonode:lccs_n3_2007"
+        "geonode:lccs_n3_2007",
+        "geonode:usos_suelo",
+        "geonode:usos_suelo_cordoba"
       ]
     },
     {
