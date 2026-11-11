@@ -11,12 +11,18 @@ function fetchCapabilitiesWithCache(hostUrl) {
   if (_capabilitiesCache[hostUrl]) {
     return Promise.resolve(_capabilitiesCache[hostUrl]);
   }
-  // 2. Cache en sessionStorage (evita saturar el servidor en recargas)
+  // 2. Cache en sessionStorage (evita saturar el servidor en recargas, pero no bloquea cambios en una nueva sesion)
   try {
-    const cached = sessionStorage.getItem("cap_cache_" + hostUrl);
-    if (cached && cached.length > 200) {
-      _capabilitiesCache[hostUrl] = cached;
-      return Promise.resolve(cached);
+    const urlParams = new URLSearchParams(window.location.search);
+    const forceReload = urlParams.has("refresh") || urlParams.has("nocache");
+    if (!forceReload) {
+      const cached = sessionStorage.getItem("cap_cache_" + hostUrl);
+      if (cached && cached.length > 200) {
+        _capabilitiesCache[hostUrl] = cached;
+        return Promise.resolve(cached);
+      }
+    } else {
+      sessionStorage.removeItem("cap_cache_" + hostUrl);
     }
   } catch (e) {}
 
@@ -139,6 +145,402 @@ function checkGeoNodeLayerType(capa, callback) {
 }
 
 
+function extractStylesFromLayerXml(layerXml) {
+  if (!layerXml) return [];
+  const styles = [];
+  try {
+    const el = layerXml.jquery ? layerXml[0] : layerXml;
+    if (!el) return [];
+
+    const allNodes = el.childNodes || [];
+    let styleNodes = [];
+    for (let i = 0; i < allNodes.length; i++) {
+      const node = allNodes[i];
+      if (node.nodeType === 1 && (node.nodeName === "Style" || node.nodeName.toLowerCase() === "style")) {
+        styleNodes.push(node);
+      }
+    }
+
+    if (styleNodes.length === 0) {
+      const byTag = el.getElementsByTagName("Style");
+      if (byTag && byTag.length > 0) {
+        for (let i = 0; i < byTag.length; i++) styleNodes.push(byTag[i]);
+      } else {
+        const byTagLower = el.getElementsByTagName("style");
+        if (byTagLower && byTagLower.length > 0) {
+          for (let i = 0; i < byTagLower.length; i++) styleNodes.push(byTagLower[i]);
+        }
+      }
+    }
+
+    styleNodes.forEach(sNode => {
+      let sName = "";
+      let sTitle = "";
+      let sLegend = "";
+
+      const nameNode = sNode.getElementsByTagName("Name")[0] || sNode.getElementsByTagName("name")[0];
+      if (nameNode) sName = (nameNode.textContent || nameNode.text || "").trim();
+
+      const titleNode = sNode.getElementsByTagName("Title")[0] || sNode.getElementsByTagName("title")[0];
+      if (titleNode) sTitle = (titleNode.textContent || titleNode.text || "").trim();
+
+      const onlineRes = sNode.getElementsByTagName("OnlineResource")[0] || sNode.getElementsByTagName("onlineresource")[0];
+      if (onlineRes) {
+        sLegend = onlineRes.getAttribute("xlink:href") || onlineRes.getAttribute("href") || "";
+      }
+
+      if (sName && !styles.some(s => s.name === sName)) {
+        styles.push({
+          name: sName,
+          title: sTitle || sName,
+          legendURL: sLegend
+        });
+      }
+    });
+  } catch (err) {
+    console.error("Error parsing layer styles from XML:", err);
+  }
+  return styles;
+}
+window.extractStylesFromLayerXml = extractStylesFromLayerXml;
+
+function changeWmsLayerStyle(layerName, newStyle, childId) {
+  let layerObj = app.layers ? app.layers[layerName] : null;
+  let capa = layerObj ? layerObj.capa : null;
+
+  if (!capa && window.gestorMenu) {
+    for (let k in gestorMenu.items) {
+      let grp = gestorMenu.items[k];
+      if (grp.itemsComposite) {
+        for (let k2 in grp.itemsComposite) {
+          let it = grp.itemsComposite[k2];
+          if (it.nombre === layerName) {
+            capa = it.capa;
+            if (!childId) childId = it.getId();
+            break;
+          }
+        }
+      }
+      if (capa) break;
+    }
+  }
+
+  if (capa) {
+    capa.currentStyle = newStyle;
+  }
+  if (layerObj && layerObj.capa) {
+    layerObj.capa.currentStyle = newStyle;
+  }
+
+  // 1. Update map WMS layer params if layer is active
+  if (typeof overlayMaps !== "undefined" && overlayMaps[layerName]) {
+    const l = overlayMaps[layerName];
+    if (typeof l.setParams === "function") {
+      l.setParams({ styles: newStyle });
+    } else if (l._source && typeof l._source.setParams === "function") {
+      l._source.setParams({ styles: newStyle });
+    } else if (l._source && l._source._overlay && typeof l._source._overlay.setParams === "function") {
+      l._source._overlay.setParams({ styles: newStyle });
+    }
+  }
+
+  // 2. Update legend image in menu
+  let cid = childId || (layerObj ? layerObj.childid : null);
+  if (!cid && app.layerNameByDomId) {
+    cid = Object.keys(app.layerNameByDomId).find(k => app.layerNameByDomId[k] === layerName);
+  }
+
+  let domItem = cid ? document.getElementById(cid) : null;
+  if (!domItem) {
+    let optDiv = document.getElementById("layer-options-" + layerName);
+    if (optDiv && optDiv.parentElement) {
+      domItem = optDiv.parentElement;
+    }
+  }
+
+  if (domItem && capa) {
+    let newLegend = "";
+    if (capa.styles && capa.styles.length > 0) {
+      let matchStyle = capa.styles.find(s => s.name === newStyle);
+      if (matchStyle && matchStyle.legendURL) {
+        newLegend = matchStyle.legendURL;
+      }
+    }
+    if (!newLegend) {
+      let host = (capa.host || "").replace(/\/+$/, "");
+      if (host.includes("/geoserver") && !host.endsWith("/wms")) {
+        host += "/wms";
+      }
+      let baseHost = host;
+      if (!baseHost.includes("?")) {
+        baseHost += "?";
+      } else if (!baseHost.endsWith("?") && !baseHost.endsWith("&")) {
+        baseHost += "&";
+      }
+      let legendParams = (typeof _LEGEND_PARAMS !== "undefined" ? _LEGEND_PARAMS : "") +
+        (typeof _LEGEND_OPTIONS !== "undefined" ? _LEGEND_OPTIONS : "") +
+        "forceTitles:off;forceLabels:off;";
+      newLegend = `${baseHost}service=WMS&request=GetLegendGraphic&format=image%2Fpng&version=1.1.1&layer=${encodeURIComponent(layerName)}&style=${encodeURIComponent(newStyle)}${legendParams}`;
+    }
+
+    capa.legendURL = newLegend;
+
+    // URL para leyenda expandida (con etiquetas visibles)
+    let newLegendMax = newLegend.replace(/forceLabels:off/g, "forceLabels:on").replace(/forceTitles:off/g, "forceTitles:on");
+    if (!newLegendMax.includes("forceLabels:on")) {
+      newLegendMax += (newLegendMax.includes("?") ? "&" : "?") + "LEGEND_OPTIONS=forceLabels:on;";
+    }
+
+    // 1. Actualizar icono chico (.legend-img) si sigue en el DOM
+    let img = domItem.querySelector(".legend-img");
+    if (img) {
+      img.src = newLegend;
+    }
+
+    // 2. Actualizar imagen expandida (.legend-img-max) si ya esta abierta
+    let maxImg = domItem.querySelector(".legend-img-max");
+    if (maxImg) {
+      maxImg.src = newLegendMax;
+    }
+
+    // 3. Guardar la URL actualizada en el elemento DOM y contenedor para proximas aperturas
+    domItem._currentLegendMax = newLegendMax;
+    let expandDiv = domItem.querySelector(".expand-legend-graphic");
+    if (expandDiv) {
+      expandDiv._currentLegendMax = newLegendMax;
+      let expImg = expandDiv.querySelector("img");
+      if (expImg) {
+        expImg.src = newLegendMax;
+      }
+    }
+  }
+}
+window.changeWmsLayerStyle = changeWmsLayerStyle;
+
+function formatStyleTitle(styleName, styleTitle, layerName) {
+  if (!styleName) return "";
+  const raw = styleName.replace(/^[a-zA-Z0-9_-]+:/, "");
+
+  // 1. Check app.styleTitles
+  if (typeof app !== "undefined" && app.styleTitles) {
+    if (app.styleTitles[styleName]) return app.styleTitles[styleName];
+    if (app.styleTitles[raw]) return app.styleTitles[raw];
+  }
+
+  // 2. Check layer-specific style_titles
+  const lyrObj = (typeof app !== "undefined" && app.layers && layerName) ? app.layers[layerName] : null;
+  const capa = lyrObj ? lyrObj.capa : null;
+  if (capa && capa.style_titles) {
+    if (capa.style_titles[styleName]) return capa.style_titles[styleName];
+    if (capa.style_titles[raw]) return capa.style_titles[raw];
+  }
+
+  // 3. If styleTitle is friendly (doesn't have workspace: and is not equal to raw styleName)
+  if (styleTitle) {
+    const cleanTitle = styleTitle.replace(/^[a-zA-Z0-9_-]+:/, "").trim();
+    if (cleanTitle && cleanTitle !== raw && cleanTitle !== styleName) {
+      return cleanTitle;
+    }
+    if (!styleTitle.includes(":") && styleTitle !== raw && styleTitle !== styleName) {
+      return styleTitle;
+    }
+  }
+
+  // 4. Default: clean raw styleName replacing underscores with spaces
+  let pretty = raw.replace(/_/g, " ").trim();
+  return pretty.charAt(0).toUpperCase() + pretty.slice(1);
+}
+window.formatStyleTitle = formatStyleTitle;
+
+function updateStyleSelectorOptionsInDom(layerName, styles, childId) {
+  const selectId = "select-style-" + layerName.replace(/[:.]/g, "-");
+  const selectEl = document.getElementById(selectId);
+  if (!selectEl) return;
+  const currentVal = selectEl.value;
+  selectEl.innerHTML = "";
+  styles.forEach((st, idx) => {
+    const opt = document.createElement("option");
+    opt.value = st.name;
+    opt.style.cssText = "color: #222 !important; background-color: #ffffff !important;";
+    let optText = formatStyleTitle(st.name, st.title, layerName);
+    opt.textContent = optText;
+    if (st.name === currentVal) {
+      opt.selected = true;
+    }
+    selectEl.appendChild(opt);
+  });
+}
+window.updateStyleSelectorOptionsInDom = updateStyleSelectorOptionsInDom;
+
+async function resolveStyleTitlesFromSld(capa, childId) {
+  if (!capa || !capa.styles || capa.styles.length <= 1) return;
+  try {
+    let cleanHost = (capa.host || "").replace(/\/+$/, "");
+    if (cleanHost.includes("/geoserver") && !cleanHost.endsWith("/wms")) {
+      cleanHost += "/wms";
+    }
+    const sep = cleanHost.includes("?") ? "&" : "?";
+    const url = `${cleanHost}${sep}service=WMS&version=1.1.1&request=GetStyles&layers=${encodeURIComponent(capa.nombre)}`;
+    const res = await fetch(url);
+    if (!res.ok) return;
+    const text = await res.text();
+    const parser = new DOMParser();
+    const xml = parser.parseFromString(text, "text/xml");
+
+    let foundAny = false;
+    const userStyles = Array.from(xml.getElementsByTagName("UserStyle"));
+    userStyles.forEach(uStyle => {
+      let uName = uStyle.getElementsByTagName("Name")[0]?.textContent?.trim() || "";
+      let uTitle = "";
+      const seNames = uStyle.getElementsByTagName("se:Name");
+      if (seNames.length > 0 && seNames[0].textContent.trim()) {
+        uTitle = seNames[0].textContent.trim();
+      }
+      if (!uTitle) {
+        const titles = uStyle.getElementsByTagName("Title");
+        if (titles.length > 0 && titles[0].textContent.trim()) {
+          uTitle = titles[0].textContent.trim();
+        }
+      }
+      if (uTitle) {
+        capa.styles.forEach(st => {
+          const raw = st.name.replace(/^[a-zA-Z0-9_-]+:/, "");
+          if (st.name === uName || raw === uName || (!uName && capa.styles.length === 2)) {
+            st.title = uTitle;
+            foundAny = true;
+          }
+        });
+      }
+    });
+
+    if (!foundAny) {
+      const namedLayers = Array.from(xml.getElementsByTagName("NamedLayer"));
+      namedLayers.forEach(nl => {
+        const seNames = nl.getElementsByTagName("se:Name");
+        if (seNames.length > 0 && seNames[0].textContent.trim()) {
+          const foundTitle = seNames[0].textContent.trim();
+          capa.styles.forEach((st, idx) => {
+            if (idx > 0) {
+              st.title = foundTitle;
+              foundAny = true;
+            }
+          });
+        }
+      });
+    }
+
+    if (foundAny) {
+      updateStyleSelectorOptionsInDom(capa.nombre, capa.styles, childId);
+    }
+  } catch (e) {
+    // ignore
+  }
+}
+window.resolveStyleTitlesFromSld = resolveStyleTitlesFromSld;
+
+function renderLayerStyleSelectorIfAvailable(layerName, styles, childId) {
+  if (!styles || styles.length <= 1) return;
+  const optionsDiv = document.getElementById("layer-options-" + layerName);
+  if (!optionsDiv) return;
+  if (optionsDiv.querySelector(".style-layer")) return; // already rendered
+
+  const btn_style = document.createElement("div");
+  btn_style.className = "style-layer";
+  btn_style.setAttribute("layername", layerName);
+  btn_style.title = "Seleccionar estilo de visualización";
+
+  const btn_style_icon = document.createElement("i");
+  btn_style_icon.classList = "fa-solid fa-palette";
+  btn_style_icon.style.cssText = "margin-right: 6px; font-size: 13px; color: #fff !important;";
+
+  const label_style = document.createElement("span");
+  label_style.className = "style-label";
+  label_style.style.cssText = "color: #fff !important; font-size: 11px; margin-right: 6px; user-select: none;";
+  label_style.textContent = "Estilo:";
+
+  const select_style = document.createElement("select");
+  select_style.className = "select-layer-style";
+  select_style.id = "select-style-" + layerName.replace(/[:.]/g, "-");
+  select_style.style.cssText = "color: #222 !important; background-color: #ffffff !important; font-size: 11px; font-weight: 500; height: 24px; line-height: 22px; padding: 1px 6px; border-radius: 4px; border: 1px solid #ccc; cursor: pointer; max-width: 170px;";
+  select_style.setAttribute("onclick", "event.stopPropagation()");
+  select_style.setAttribute("onmousedown", "event.stopPropagation()");
+  const cidArg = childId ? `'${childId}'` : "null";
+  select_style.setAttribute("onChange", `changeWmsLayerStyle('${layerName}', this.value, ${cidArg})`);
+
+  const currentStyle = (app.layers && app.layers[layerName]?.capa?.currentStyle) || styles[0].name;
+
+  styles.forEach((st, idx) => {
+    const opt = document.createElement("option");
+    opt.value = st.name;
+    opt.style.cssText = "color: #222 !important; background-color: #ffffff !important;";
+    let optText = formatStyleTitle(st.name, st.title, layerName);
+    opt.textContent = optText;
+    if (st.name === currentStyle) {
+      opt.selected = true;
+    }
+    select_style.appendChild(opt);
+  });
+
+  btn_style.appendChild(btn_style_icon);
+  btn_style.appendChild(label_style);
+  btn_style.appendChild(select_style);
+  optionsDiv.appendChild(btn_style);
+}
+window.renderLayerStyleSelectorIfAvailable = renderLayerStyleSelectorIfAvailable;
+
+function checkAndLoadLayerStyles(layerItem) {
+  if (!layerItem) return;
+  const capa = layerItem.capa || layerItem;
+  if (!capa || capa.servicio !== "wms") return;
+  const childId = typeof layerItem.getId === "function" ? layerItem.getId() : layerItem.childid || null;
+
+  if (capa.styles && capa.styles.length > 0) {
+    if (capa.styles.length > 1) {
+      renderLayerStyleSelectorIfAvailable(capa.nombre, capa.styles, childId);
+      resolveStyleTitlesFromSld(capa, childId);
+    }
+    return;
+  }
+
+  // Look in _capabilitiesCache or trigger GetCapabilities
+  const host = capa.host ? capa.host.replace(/\/+$/, "") : "";
+  const version = capa.version || "1.3.0";
+  const serviceParams = `?service=${capa.servicio}&version=${version}&request=GetCapabilities`;
+  const hostUrl = `${host}${serviceParams}`;
+
+  if (typeof _capabilitiesCache !== "undefined" && _capabilitiesCache[hostUrl]) {
+    try {
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(_capabilitiesCache[hostUrl], "text/xml");
+      const nameNodes = xmlDoc.getElementsByTagName("Name");
+      for (let i = 0; i < nameNodes.length; i++) {
+        if (nameNodes[i].textContent?.trim() === capa.nombre) {
+          const lyrXml = nameNodes[i].parentNode;
+          const styles = extractStylesFromLayerXml(lyrXml);
+          if (styles.length > 0) {
+            capa.styles = styles;
+            if (!capa.currentStyle) capa.currentStyle = styles[0].name;
+            if (styles.length > 1) {
+              renderLayerStyleSelectorIfAvailable(capa.nombre, styles, childId);
+            }
+          }
+          break;
+        }
+      }
+    } catch (e) {
+      console.error("Error in checkAndLoadLayerStyles cached xml:", e);
+    }
+  } else if (typeof getWmsLyrParams === "function") {
+    getWmsLyrParams(capa).then(() => {
+      if (capa.styles && capa.styles.length > 1) {
+        renderLayerStyleSelectorIfAvailable(capa.nombre, capa.styles, childId);
+      }
+    }).catch(err => console.error(err));
+  }
+}
+window.checkAndLoadLayerStyles = checkAndLoadLayerStyles;
+
+
 /******************************************
 Class Capa
 ******************************************/
@@ -158,6 +560,7 @@ class Capa {
     maxy,
     attribution,
     legendURL,
+    styles,
   ) {
     this.nombre = nombre;
     this.titulo = titulo;
@@ -173,6 +576,8 @@ class Capa {
     this.maxy = maxy;
     this.attribution = attribution;
     this.legendURL = legendURL;
+    this.styles = styles || [];
+    this.currentStyle = (this.styles.length > 0) ? this.styles[0].name : "";
   }
 
   getLegendURL() {
@@ -390,6 +795,49 @@ class ImpresorItemHTML extends Impresor {
     btn_opacity.appendChild(input_opacity);
     btn_options.appendChild(btn_opacity);
     btn_options.appendChild(input_opacity);
+
+    if (lyr && lyr.styles && lyr.styles.length > 1) {
+      const btn_style = document.createElement("div");
+      btn_style.className = "style-layer";
+      btn_style.setAttribute("layername", item.nombre);
+      btn_style.title = "Seleccionar estilo de visualización";
+
+      const btn_style_icon = document.createElement("i");
+      btn_style_icon.classList = "fa-solid fa-palette";
+      btn_style_icon.style.cssText = "margin-right: 6px; font-size: 13px; color: #fff !important;";
+
+      const label_style = document.createElement("span");
+      label_style.className = "style-label";
+      label_style.style.cssText = "color: #fff !important; font-size: 11px; margin-right: 6px; user-select: none;";
+      label_style.textContent = "Estilo:";
+
+      const select_style = document.createElement("select");
+      select_style.className = "select-layer-style";
+      select_style.id = "select-style-" + item.nombre.replace(/[:.]/g, "-");
+      select_style.style.cssText = "color: #222 !important; background-color: #ffffff !important; font-size: 11px; font-weight: 500; height: 24px; line-height: 22px; padding: 1px 6px; border-radius: 4px; border: 1px solid #ccc; cursor: pointer; max-width: 170px;";
+      select_style.setAttribute("onclick", "event.stopPropagation()");
+      select_style.setAttribute("onmousedown", "event.stopPropagation()");
+      select_style.setAttribute("onChange", `changeWmsLayerStyle('${item.nombre}', this.value, '${childId}')`);
+
+      const currentStyle = lyr.currentStyle || lyr.styles[0].name;
+
+      lyr.styles.forEach((st, idx) => {
+        const opt = document.createElement("option");
+        opt.value = st.name;
+        opt.style.cssText = "color: #222 !important; background-color: #ffffff !important;";
+        let optText = formatStyleTitle(st.name, st.title, item.nombre);
+        opt.textContent = optText;
+        if (st.name === currentStyle) {
+          opt.selected = true;
+        }
+        select_style.appendChild(opt);
+      });
+
+      btn_style.appendChild(btn_style_icon);
+      btn_style.appendChild(label_style);
+      btn_style.appendChild(select_style);
+      btn_options.appendChild(btn_style);
+    }
 
     btn.appendChild(btn_title);
     btn.appendChild(btn_options);
@@ -969,11 +1417,14 @@ class LayersInfoWMS extends LayersInfo {
       const iMinX = boundingBox?.getAttribute("minx") || null;
       const iMaxX = boundingBox?.getAttribute("maxx") || null;
 
+      // Extract available styles
+      const styles = extractStylesFromLayerXml(layer);
+
       // Extract legend URL
       const legendURL = this.icons ? this.icons[iName] : null;
 
       // Create appropriate capa object based on type
-      const capa = this._createCapaObject(iName, iTitle, iSrs, iMinX, iMaxX, iMinY, iMaxY, keywords, legendURL);
+      const capa = this._createCapaObject(iName, iTitle, iSrs, iMinX, iMaxX, iMinY, iMaxY, keywords, legendURL, styles);
 
       // Create and return menu item
       const item = new Item(capa.nombre, `${this.section}${index}`, keywords, iAbstract, capa.titulo, capa, this.getCallback(), listType);
@@ -1002,11 +1453,18 @@ class LayersInfoWMS extends LayersInfo {
   * @param {string|null} legendURL - The URL of the legend.
   * @returns {Capa|CapaMapserver} The created capa object.
   */
-  _createCapaObject(name, title, srs, minX, maxX, minY, maxY, keywords, legendURL) {
+  _createCapaObject(name, title, srs, minX, maxX, minY, maxY, keywords, legendURL, styles) {
     if (this.type === "wmslayer_mapserver") {
       return new CapaMapserver(name, title, srs, this.host, this.service, this.version, this.feature_info_format, minX, maxX, minY, maxY);
     } else {
-      return new Capa(name, title, srs, this.host, this.service, this.version, this.feature_info_format, keywords, minX, maxX, minY, maxY, null, legendURL);
+      const capaObj = new Capa(name, title, srs, this.host, this.service, this.version, this.feature_info_format, keywords, minX, maxX, minY, maxY, null, legendURL, styles);
+      if (styles && styles.length > 0) {
+        capaObj.styles = styles;
+      }
+      if (this.style_titles) {
+        capaObj.style_titles = this.style_titles;
+      }
+      return capaObj;
     }
   }
 
@@ -1151,6 +1609,7 @@ class LayersInfoWMS extends LayersInfo {
                 iMaxY,
               );
             } else {
+              var styles = extractStylesFromLayerXml(b);
               var capa = new Capa(
                 iName,
                 iTitle,
@@ -1166,7 +1625,12 @@ class LayersInfoWMS extends LayersInfo {
                 iMaxY,
                 null,
                 ilegendURL,
+                styles,
               );
+              if (styles && styles.length > 0) {
+                capa.styles = styles;
+                capa.currentStyle = styles[0].name;
+              }
               gestorMenu.layersDataForWfs[capa.nombre] = {
                 name: capa.nombre,
                 section: capa.titulo,
@@ -2058,6 +2522,9 @@ class Item extends ItemComposite {
 
     if (options_layer[0].children[1] && options_layer.hasClass("active")) {
       options_layer[0].children[1].style.display = "flex";
+      if (typeof checkAndLoadLayerStyles === "function") {
+        checkAndLoadLayerStyles(this);
+      }
     } else if (options_layer[0].children[1]) {
       options_layer[0].children[1].style.display = "none";
     }
@@ -2342,8 +2809,7 @@ class GestorMenu {
       return !this.availableBaseLayers.includes(layer);
     });
 
-    // Si no hay datos en layersDataForWfs, devolver vacío
-    if (Object.keys(this.layersDataForWfs).length === 0) {
+    if (activeLayers.length === 0) {
       return [];
     }
 
@@ -2352,54 +2818,46 @@ class GestorMenu {
 
     for (const section in this.items) {
       const sectionData = this.items[section];
-      if (sectionData.hasOwnProperty("itemsComposite")) {
+      if (sectionData && sectionData.itemsComposite) {
         for (const key in sectionData.itemsComposite) {
           const item = sectionData.itemsComposite[key];
-          if (item.nombre && item.capa) {
-            // Mapear por nombre de capa para acceso rápido
-            metadataMap.set(item.nombre, item.capa);
+          if (item && item.nombre) {
+            metadataMap.set(item.nombre, item);
           }
         }
       }
     }
 
-    // Construir resultado basado en layersDataForWfs, pero enriquecido
-    return activeLayers
-      .filter((layer) => {
-        // Solo incluir si existe en layersDataForWfs
-        return (
-          this.layersDataForWfs.hasOwnProperty(layer) &&
-          this.layersDataForWfs[layer]
-        );
-      })
-      .map((layer) => {
-        const baseData = this.layersDataForWfs[layer];
-        const extraMetadata = metadataMap.get(layer);
+    return activeLayers.map((layer) => {
+      const item = metadataMap.get(layer);
+      let capa = null;
+      if (item) {
+        if (item.capas && item.capas.length > 0) capa = item.capas[0];
+        else if (item.capa) capa = item.capa;
+      }
 
-        // Si hay metadatos adicionales, combinarlos con baseData
-        if (extraMetadata) {
-          return {
-            ...baseData, // datos originales (probablemente WFS)
-            // Añadir metadatos adicionales (WMS, etc.)
-            titulo: extraMetadata.titulo,
-            host: extraMetadata.host,
-            servicio: extraMetadata.servicio,
-            version: extraMetadata.version,
-            featureInfoFormat: extraMetadata.featureInfoFormat,
-            srs: extraMetadata.srs,
-            minx: extraMetadata.minx,
-            maxx: extraMetadata.maxx,
-            miny: extraMetadata.miny,
-            maxy: extraMetadata.maxy,
-            attribution: extraMetadata.attribution,
-            legendURL: extraMetadata.legendURL,
-            // Agrega más campos si son relevantes
-          };
-        }
+      let host = (capa && capa.host) || "";
+      if (!host && this.layersDataForWfs && this.layersDataForWfs[layer]) {
+        host = this.layersDataForWfs[layer].host;
+      }
+      if (!host && typeof overlayMaps !== "undefined" && overlayMaps[layer]) {
+        const om = overlayMaps[layer];
+        host = (om._source && om._source._url) || om._url || "";
+      }
 
-        // Si no hay metadatos adicionales, devuelve solo los datos de WFS
-        return baseData;
-      });
+      const titulo = (item && item.titulo) || (capa && capa.titulo) || layer;
+
+      return {
+        name: layer,
+        nombre: layer,
+        titulo: titulo,
+        title: titulo,
+        host: host,
+        servicio: (capa && capa.servicio) || "wms",
+        section: item ? item.seccion : "",
+        rawItem: item,
+      };
+    });
   }
 
   /*   getActiveLayersWithoutBasemap() {
@@ -3849,8 +4307,18 @@ class Menu_UI {
     download_opt.innerHTML = `<a style="color:#474b4e;" href="#"><i class="fa fa-download" aria-hidden="true" style="width:20px;"></i>Descargar</a>`;
     download_opt.onclick = function () {
       const index_file = getIndexFileLayerbyID(id);
-      // let d_file_name = addedLayers[index_file].name // unused
       const layer = addedLayers[index_file];
+      if (layer && (layer.type === "geotiff" || layer.format === "tif" || layer.format === "tiff") && layer.file) {
+        if (typeof downloadBlob === "function") {
+          downloadBlob(layer.file, layer.file_name || `${layer.name}.tif`);
+        } else {
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(layer.file);
+          a.download = layer.file_name || `${layer.name}.tif`;
+          a.click();
+        }
+        return;
+      }
       if (!layer.download) {
         mapa.downloadMultiLayerGeoJSON(id, layer.name, true);
         return;
@@ -3864,6 +4332,10 @@ class Menu_UI {
     edit_data_opt.onclick = function () {
       const index_file = getIndexFileLayerbyID(id);
       const data = addedLayers[index_file];
+      if (data && (data.type === "geotiff" || data.format === "tif" || data.format === "tiff")) {
+        new UserMessage("La vista de tabla de atributos solo aplica a capas vectoriales.", true, "information");
+        return;
+      }
       let dTable = new Datatable(data.layer);
       createTabulator(dTable, data.file_name, { editable: true });
       return;
@@ -3878,18 +4350,65 @@ class Menu_UI {
     let zoom_layer_opt = document.createElement("li");
     zoom_layer_opt.innerHTML = `<a style="color:#474b4e;" href="#"><i class="fa fa-search-plus" aria-hidden="true" style="width:20px;"></i>Zoom a capa</a>`;
     zoom_layer_opt.onclick = function () {
-      const lyr = (typeof addedLayers !== "undefined" ? addedLayers : []).find((l) => l.id === id);
-      if (lyr && lyr.layer && typeof mapa !== "undefined" && typeof mapa.centerLayer === "function") {
-        mapa.centerLayer(lyr.layer);
-      } else if (typeof uimodalfs !== "undefined" && typeof uimodalfs.zoomToLayer === "function") {
+      const lyr = (typeof addedLayers !== "undefined" ? addedLayers : []).find(
+        (l) => l && (l.id === id || l.name === id || l.file_name === id)
+      );
+      if (lyr && lyr.layer && typeof mapa !== "undefined") {
+        try {
+          if (typeof getGeoRasterBounds === "function") {
+            const rBounds = getGeoRasterBounds(lyr.layer);
+            if (rBounds) {
+              const bArr = Array.isArray(rBounds) ? rBounds : [
+                [rBounds.getSouth ? rBounds.getSouth() : rBounds._southWest.lat, rBounds.getWest ? rBounds.getWest() : rBounds._southWest.lng],
+                [rBounds.getNorth ? rBounds.getNorth() : rBounds._northEast.lat, rBounds.getEast ? rBounds.getEast() : rBounds._northEast.lng]
+              ];
+              try {
+                mapa.fitBounds(bArr, { maxZoom: 16, padding: [30, 30] });
+                return;
+              } catch (e) {
+                const cLat = (bArr[0][0] + bArr[1][0]) / 2;
+                const cLng = (bArr[0][1] + bArr[1][1]) / 2;
+                mapa.setView([cLat, cLng], 14);
+                return;
+              }
+            }
+          }
+          if (typeof mapa.centerLayer === "function") {
+            mapa.centerLayer(lyr.layer);
+            return;
+          }
+        } catch (err) {
+          console.warn("Error en Zoom a capa:", err);
+        }
+      }
+      if (typeof uimodalfs !== "undefined" && typeof uimodalfs.zoomToLayer === "function") {
         uimodalfs.zoomToLayer(id);
       }
     };
 
     mainul.append(zoom_layer_opt);
     mainul.append(edit_name_opt);
-    mainul.append(edit_data_opt);
+    if (layerType !== "geotiff") {
+      mainul.append(edit_data_opt);
+    }
     mainul.append(download_opt);
+
+    if (layerType === "geotiff") {
+      let opacity_opt = document.createElement("li");
+      opacity_opt.style = "padding: 6px 15px; border-top: 1px solid #eee;";
+      opacity_opt.innerHTML = `
+        <label style="font-size:11px;font-weight:600;color:#555;margin-bottom:3px;display:flex;align-items:center;">
+          <i class="fa-solid fa-circle-half-stroke" style="margin-right:6px;"></i>Opacidad
+        </label>
+        <input type="range" min="0" max="1" step="0.05" value="0.85" style="width:100%;cursor:pointer;" oninput="
+          const lyrObj = (typeof addedLayers !== 'undefined') ? addedLayers.find(l => l && l.id === '${id}') : null;
+          if (lyrObj && lyrObj.layer && typeof lyrObj.layer.setOpacity === 'function') {
+            lyrObj.layer.setOpacity(parseFloat(this.value));
+          }
+        ">
+      `;
+      mainul.append(opacity_opt);
+    }
 
     //mainul.append(query_opt)
     //mainul.append(copy_opt)

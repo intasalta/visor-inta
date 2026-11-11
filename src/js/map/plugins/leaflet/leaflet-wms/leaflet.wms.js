@@ -88,6 +88,13 @@
       }
     },
 
+    'setParams': function (params) {
+      L.extend(this.options, params);
+      if (this._overlay && this._overlay.setParams) {
+        this._overlay.setParams(params);
+      }
+    },
+
     'bringToBack': function () {
       this.options.isBack = true;
       if (this._overlay) {
@@ -268,6 +275,13 @@
     },
     'bringToFront': function () {
       this._source.bringToFront();
+    },
+    'setParams': function (params) {
+      if (this._source && this._source.setParams) {
+        this._source.setParams(params);
+      } else if (this._source && this._source._overlay && this._source._overlay.setParams) {
+        this._source._overlay.setParams(params);
+      }
     }
   });
 

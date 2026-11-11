@@ -1,3 +1,161 @@
+// Registro de proyecciones oficiales de Argentina en proj4 (POSGAR 07, POSGAR 94, Campo Inchauspe, UTM)
+function registerArgentineProjections() {
+  if (typeof proj4 === "undefined") return;
+  const defs = {
+    "5343": "+proj=tmerc +lat_0=-90 +lon_0=-72 +k=1 +x_0=1500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs",
+    "5344": "+proj=tmerc +lat_0=-90 +lon_0=-69 +k=1 +x_0=2500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs",
+    "5345": "+proj=tmerc +lat_0=-90 +lon_0=-66 +k=1 +x_0=3500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs",
+    "5346": "+proj=tmerc +lat_0=-90 +lon_0=-63 +k=1 +x_0=4500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs",
+    "5347": "+proj=tmerc +lat_0=-90 +lon_0=-60 +k=1 +x_0=5500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs",
+    "5348": "+proj=tmerc +lat_0=-90 +lon_0=-57 +k=1 +x_0=6500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs",
+    "5349": "+proj=tmerc +lat_0=-90 +lon_0=-54 +k=1 +x_0=7500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs",
+    "5340": "+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs",
+    "4694": "+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs",
+    "22181": "+proj=tmerc +lat_0=-90 +lon_0=-72 +k=1 +x_0=1500000 +y_0=0 +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs",
+    "22182": "+proj=tmerc +lat_0=-90 +lon_0=-69 +k=1 +x_0=2500000 +y_0=0 +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs",
+    "22183": "+proj=tmerc +lat_0=-90 +lon_0=-66 +k=1 +x_0=3500000 +y_0=0 +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs",
+    "22184": "+proj=tmerc +lat_0=-90 +lon_0=-63 +k=1 +x_0=4500000 +y_0=0 +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs",
+    "22185": "+proj=tmerc +lat_0=-90 +lon_0=-60 +k=1 +x_0=5500000 +y_0=0 +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs",
+    "22186": "+proj=tmerc +lat_0=-90 +lon_0=-57 +k=1 +x_0=6500000 +y_0=0 +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs",
+    "22187": "+proj=tmerc +lat_0=-90 +lon_0=-54 +k=1 +x_0=7500000 +y_0=0 +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs",
+    "4172": "+proj=longlat +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +no_defs",
+    "22171": "+proj=tmerc +lat_0=-90 +lon_0=-72 +k=1 +x_0=1500000 +y_0=0 +ellps=intl +towgs84=-148,136,90,0,0,0,0 +units=m +no_defs",
+    "22172": "+proj=tmerc +lat_0=-90 +lon_0=-69 +k=1 +x_0=2500000 +y_0=0 +ellps=intl +towgs84=-148,136,90,0,0,0,0 +units=m +no_defs",
+    "22173": "+proj=tmerc +lat_0=-90 +lon_0=-66 +k=1 +x_0=3500000 +y_0=0 +ellps=intl +towgs84=-148,136,90,0,0,0,0 +units=m +no_defs",
+    "22174": "+proj=tmerc +lat_0=-90 +lon_0=-63 +k=1 +x_0=4500000 +y_0=0 +ellps=intl +towgs84=-148,136,90,0,0,0,0 +units=m +no_defs",
+    "22175": "+proj=tmerc +lat_0=-90 +lon_0=-60 +k=1 +x_0=5500000 +y_0=0 +ellps=intl +towgs84=-148,136,90,0,0,0,0 +units=m +no_defs",
+    "22176": "+proj=tmerc +lat_0=-90 +lon_0=-57 +k=1 +x_0=6500000 +y_0=0 +ellps=intl +towgs84=-148,136,90,0,0,0,0 +units=m +no_defs",
+    "22177": "+proj=tmerc +lat_0=-90 +lon_0=-54 +k=1 +x_0=7500000 +y_0=0 +ellps=intl +towgs84=-148,136,90,0,0,0,0 +units=m +no_defs",
+    "32718": "+proj=utm +zone=18 +south +datum=WGS84 +units=m +no_defs",
+    "32719": "+proj=utm +zone=19 +south +datum=WGS84 +units=m +no_defs",
+    "32720": "+proj=utm +zone=20 +south +datum=WGS84 +units=m +no_defs",
+    "32721": "+proj=utm +zone=21 +south +datum=WGS84 +units=m +no_defs"
+  };
+  for (const code in defs) {
+    try {
+      proj4.defs("EPSG:" + code, defs[code]);
+      proj4.defs(code, defs[code]);
+      proj4.defs(Number(code), defs[code]);
+    } catch (e) {}
+  }
+}
+try { registerArgentineProjections(); } catch (e) {}
+
+/**
+ * Obtiene los límites geográficos de una capa ráster GeoTIFF / GeoRasterLayer
+ * de forma robusta soportando WGS84, proyecciones argentinas POSGAR / Gauss-Krüger, UTM y EPSG desconocidos.
+ * Devuelve un arreglo [[south, west], [north, east]] con métodos de compatibilidad Leaflet (.isValid, etc.)
+ */
+function getGeoRasterBounds(layer) {
+  if (!layer) return null;
+
+  const isValidLatLng = (s, w, n, e) => {
+    return (
+      typeof s === "number" && !isNaN(s) && s >= -90 && s <= 90 &&
+      typeof n === "number" && !isNaN(n) && n >= -90 && n <= 90 &&
+      typeof w === "number" && !isNaN(w) && w >= -180 && w <= 180 &&
+      typeof e === "number" && !isNaN(e) && e >= -180 && e <= 180 &&
+      !(s === 0 && n === 0 && w === 0 && e === 0)
+    );
+  };
+
+  const makeBounds = (s, w, n, e) => {
+    const south = Math.min(s, n);
+    const north = Math.max(s, n);
+    const west = Math.min(w, e);
+    const east = Math.max(w, e);
+    const arr = [[south, west], [north, east]];
+    arr.isValid = () => true;
+    arr._southWest = { lat: south, lng: west };
+    arr._northEast = { lat: north, lng: east };
+    arr.getSouthWest = () => arr._southWest;
+    arr.getNorthEast = () => arr._northEast;
+    arr.getSouth = () => south;
+    arr.getWest = () => west;
+    arr.getNorth = () => north;
+    arr.getEast = () => east;
+    arr.getCenter = () => ({ lat: (south + north) / 2, lng: (west + east) / 2 });
+    return arr;
+  };
+
+  // 1. Intentar con getBounds() nativo de la capa si existe y es válido
+  try {
+    if (typeof layer.getBounds === "function") {
+      const b = layer.getBounds();
+      if (b) {
+        let s = null, w = null, n = null, e = null;
+        if (typeof b.getSouth === "function") {
+          s = b.getSouth(); w = b.getWest(); n = b.getNorth(); e = b.getEast();
+        } else if (b._southWest && b._northEast) {
+          s = b._southWest.lat !== undefined ? b._southWest.lat : b._southWest[0];
+          w = b._southWest.lng !== undefined ? b._southWest.lng : b._southWest[1];
+          n = b._northEast.lat !== undefined ? b._northEast.lat : b._northEast[0];
+          e = b._northEast.lng !== undefined ? b._northEast.lng : b._northEast[1];
+        }
+        if (isValidLatLng(s, w, n, e)) {
+          return makeBounds(s, w, n, e);
+        }
+      }
+    }
+  } catch (err) {}
+
+  // 2. Extraer metadatos de georaster
+  const gr = layer.georaster || (layer.georasters && layer.georasters[0]) || (layer.options && layer.options.georaster);
+  if (!gr) return null;
+
+  const xmin = gr.xmin !== undefined ? gr.xmin : gr.left;
+  const ymin = gr.ymin !== undefined ? gr.ymin : gr.bottom;
+  const xmax = gr.xmax !== undefined ? gr.xmax : gr.right;
+  const ymax = gr.ymax !== undefined ? gr.ymax : gr.top;
+
+  if (xmin === undefined || ymin === undefined || xmax === undefined || ymax === undefined) {
+    return null;
+  }
+
+  // 3. Si las coordenadas ya están en grados WGS84 (-180 a 180, -90 a 90)
+  if (isValidLatLng(ymin, xmin, ymax, xmax)) {
+    return makeBounds(ymin, xmin, ymax, xmax);
+  }
+
+  // 4. Si están proyectadas y hay código de proyección
+  const prj = gr.projection;
+  if (typeof proj4 !== "undefined" && prj && prj !== 32767 && prj !== "32767") {
+    try {
+      const prjKey = typeof prj === "string" && prj.startsWith("EPSG:") ? prj : "EPSG:" + prj;
+      const p1 = proj4(prjKey, "EPSG:4326", [xmin, ymin]);
+      const p2 = proj4(prjKey, "EPSG:4326", [xmax, ymax]);
+      if (isValidLatLng(p1[1], p1[0], p2[1], p2[0])) {
+        return makeBounds(p1[1], p1[0], p2[1], p2[0]);
+      }
+    } catch (e) {
+      console.warn("Error reproyectando georaster con proj4:", e);
+    }
+  }
+
+  // 5. Probar con proyecciones POSGAR / UTM argentinas si las coordenadas están en metros
+  if (typeof proj4 !== "undefined" && (Math.abs(xmin) > 1000 || Math.abs(ymin) > 1000)) {
+    const candidateCodes = [
+      "EPSG:5347", "EPSG:5345", "EPSG:5343", "EPSG:5344", "EPSG:5346", "EPSG:5348", "EPSG:5349",
+      "EPSG:22183", "EPSG:22185", "EPSG:22181", "EPSG:22182", "EPSG:22184", "EPSG:22186", "EPSG:22187",
+      "EPSG:32719", "EPSG:32720", "EPSG:32718", "EPSG:32721", "EPSG:3857"
+    ];
+    for (const code of candidateCodes) {
+      try {
+        const p1 = proj4(code, "EPSG:4326", [xmin, ymin]);
+        const p2 = proj4(code, "EPSG:4326", [xmax, ymax]);
+        // Coordenadas en territorio argentino (aprox lat -56 a -20, lon -75 a -52)
+        if (p1[1] >= -56 && p1[1] <= -20 && p1[0] >= -75 && p1[0] <= -52) {
+          if (isValidLatLng(p1[1], p1[0], p2[1], p2[0])) {
+            return makeBounds(p1[1], p1[0], p2[1], p2[0]);
+          }
+        }
+      } catch (e) {}
+    }
+  }
+
+  return null;
+}
+
 // -- Plugins Control
 var plugins = new Array("loadGeojson", "loadWms");
 var loadTableAsPopUp = false;
@@ -697,7 +855,7 @@ function adaptToImage(imgDiv) {
     container_expand_legend_grafic.style = "overflow:hidden;";
     container_expand_legend_grafic.setAttribute("load", false);
 
-    let max_url_img = img.src.replace(/off/g, "on");
+    let max_url_img = (item && item._currentLegendMax) || img.src.replace(/off/g, "on");
     img.src.includes("svg") ||
       img.src.includes("png") ||
       img.src.includes("jpg")
@@ -1208,10 +1366,21 @@ function parseXml(str, lyr, sys) {
     }
 
     let bboxNodes = xmlLyr.getElementsByTagName("BoundingBox");
-    lyr.legendURL =
-      xmlLyr.getElementsByTagName("OnlineResource")[0].attributes[
-        "xlink:href"
-      ].value;
+    const onlineResNode = xmlLyr.getElementsByTagName("OnlineResource")[0];
+    if (onlineResNode && onlineResNode.attributes["xlink:href"]) {
+      lyr.legendURL = onlineResNode.attributes["xlink:href"].value;
+    }
+
+    if (typeof extractStylesFromLayerXml === "function") {
+      const styles = extractStylesFromLayerXml(xmlLyr);
+      if (styles && styles.length > 0) {
+        lyr.styles = styles;
+        if (!lyr.currentStyle) lyr.currentStyle = styles[0].name;
+        if (styles.length > 1 && typeof renderLayerStyleSelectorIfAvailable === "function") {
+          renderLayerStyleSelectorIfAvailable(lyr.nombre, styles);
+        }
+      }
+    }
 
     for (i = 0; i < bboxNodes.length; i++) {
       if (lyr.minx === null || typeof lyr.minx === "undefined") {

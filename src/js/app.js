@@ -372,6 +372,10 @@ const app = {
               if (item.customize_layers) {
                 wmsLayerInfo.setCustomizedLayers(item.customize_layers);
               }
+              if (item.style_titles) {
+                wmsLayerInfo.style_titles = item.style_titles;
+                app.styleTitles = Object.assign(app.styleTitles || {}, item.style_titles);
+              }
 
               gestorMenu.addTab(tab);
               gestorMenu.addLayersInfo(wmsLayerInfo);

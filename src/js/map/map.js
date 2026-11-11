@@ -602,10 +602,22 @@ $("body").on("pluginLoad", function (event, plugin) {
             const pdfP = new PdfPrinter();
             pdfP.createComponent();
           }
+          if (typeof CoordinateLocator !== "undefined" && !window.coordinateLocatorInstance) {
+            window.coordinateLocatorInstance = new CoordinateLocator();
+            window.coordinateLocatorInstance.createComponent();
+          }
+          if (typeof BoxZoomTool !== "undefined" && !window.boxZoomToolInstance) {
+            window.boxZoomToolInstance = new BoxZoomTool();
+            window.boxZoomToolInstance.createComponent();
+          }
           break;
         case "consultData":
           const consultData = new ConsultData();
           consultData.createComponent();
+          if (typeof AttributeSearch !== "undefined" && !window.attributeSearchInstance) {
+            window.attributeSearchInstance = new AttributeSearch();
+            window.attributeSearchInstance.createComponent();
+          }
           break;
         case "Draw":
           var orgReadbleDistance = L.GeometryUtil.readableArea;
@@ -1250,14 +1262,62 @@ $("body").on("pluginLoad", function (event, plugin) {
                 "error",
               );
             }
-            if (layer.hasOwnProperty("_leaflet_id")) {
-              layer = layer.toGeoJSON();
+
+            // Soporte prioritario para capas GeoTIFF / GeoRasterLayer
+            const isRaster = (
+              layer.type === "geotiff" ||
+              layer.georaster ||
+              (typeof GeoRasterLayer !== "undefined" && layer instanceof GeoRasterLayer)
+            );
+
+            if (isRaster) {
+              const rBounds = typeof getGeoRasterBounds === "function" ? getGeoRasterBounds(layer) : null;
+              if (rBounds) {
+                const bArr = Array.isArray(rBounds) ? rBounds : [
+                  [rBounds.getSouth ? rBounds.getSouth() : rBounds._southWest.lat, rBounds.getWest ? rBounds.getWest() : rBounds._southWest.lng],
+                  [rBounds.getNorth ? rBounds.getNorth() : rBounds._northEast.lat, rBounds.getEast ? rBounds.getEast() : rBounds._northEast.lng]
+                ];
+                try {
+                  mapa.fitBounds(bArr, { maxZoom: 16, padding: [30, 30] });
+                  return;
+                } catch (e) {
+                  const cLat = (bArr[0][0] + bArr[1][0]) / 2;
+                  const cLng = (bArr[0][1] + bArr[1][1]) / 2;
+                  mapa.setView([cLat, cLng], 14);
+                  return;
+                }
+              }
             }
-            const bbox = turf.bbox(layer);
-            mapa.fitBounds([
-              [bbox[1], bbox[0]],
-              [bbox[3], bbox[2]],
-            ]);
+
+            // Capas Leaflet estándar con getBounds()
+            try {
+              if (layer.getBounds && typeof layer.getBounds === "function") {
+                const bounds = layer.getBounds();
+                if (bounds && bounds.isValid && bounds.isValid()) {
+                  mapa.fitBounds(bounds, { maxZoom: 16 });
+                  return;
+                }
+              }
+            } catch (errB) {}
+
+            try {
+              let geoLayer = layer;
+              if (layer.hasOwnProperty("_leaflet_id") && typeof layer.toGeoJSON === "function") {
+                geoLayer = layer.toGeoJSON();
+              }
+              if (typeof turf !== "undefined" && turf.bbox) {
+                const bbox = turf.bbox(geoLayer);
+                if (bbox && bbox.length === 4 && !bbox.some(isNaN)) {
+                  mapa.fitBounds([
+                    [bbox[1], bbox[0]],
+                    [bbox[3], bbox[2]],
+                  ]);
+                  return;
+                }
+              }
+            } catch (errT) {
+              console.warn("No se pudo centrar capa vectorial con turf:", errT);
+            }
           };
 
           mapa.addContextMenuToLayer = (layer) => {
@@ -2606,6 +2666,18 @@ $("body").on("pluginLoad", function (event, plugin) {
               return;
             }
             if (typeof layer !== "string") return;
+
+            const addedItem = (typeof addedLayers !== "undefined") ? addedLayers.find((l) => l && (l.id === layer || l.name === layer)) : null;
+            if (addedItem && addedItem.layer && addedItem.type === "geotiff") {
+              try {
+                if (typeof mapa !== "undefined" && mapa && !mapa.hasLayer(addedItem.layer)) {
+                  addedItem.layer.addTo(mapa);
+                }
+              } catch (e) {}
+              try { drawnItems.addLayer(addedItem.layer); } catch (e) {}
+              return;
+            }
+
             const type = layer.split("_")[0];
             if (mapa.editableLayers && mapa.editableLayers.hasOwnProperty(type)) {
               const lyr = mapa.editableLayers[type].find(
@@ -2630,6 +2702,16 @@ $("body").on("pluginLoad", function (event, plugin) {
             if (!layer) return;
             if (typeof layer === "object" && layer !== null) {
               drawnItems.removeLayer(layer);
+              return;
+            }
+            const addedItem = (typeof addedLayers !== "undefined") ? addedLayers.find((l) => l && (l.id === layer || l.name === layer)) : null;
+            if (addedItem && addedItem.layer && addedItem.type === "geotiff") {
+              try {
+                if (typeof mapa !== "undefined" && mapa && mapa.hasLayer(addedItem.layer)) {
+                  mapa.removeLayer(addedItem.layer);
+                }
+              } catch (e) {}
+              try { drawnItems.removeLayer(addedItem.layer); } catch (e) {}
               return;
             }
             if (typeof drawnItems !== "undefined" && drawnItems && drawnItems._layers) {
@@ -3768,6 +3850,7 @@ function loadWmsTpl(objLayer) {
       title: objLayer.titulo,
       format: "image/png",
       INFO_FORMAT: objLayer.capa.featureInfoFormat,
+      styles: objLayer.capa.currentStyle || "",
     });
     overlayMaps[objLayer.nombre] = wmsSource.getLayer(objLayer.capa.nombre);
   }
