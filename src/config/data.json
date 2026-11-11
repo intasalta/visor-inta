@@ -606,6 +606,30 @@
         "content": "Capas"
       },
       "type": "wmslayer",
+      "peso": 62,
+      "nombre": "Economía y Sociología",
+      "short_abstract": "",
+      "class": "",
+      "seccion": "Econ",
+      "servicio": "wms",
+      "version": "1.3.0",
+      "feature_info_format": "application/json",
+      "host": "https://geo-backend.inta.gob.ar/geoserver/wms",
+      "allowed_layers": [],
+      "style_titles": {
+        "geonode:laboratorios": "Laboratorios",
+        "laboratorios": "Laboratorios",
+        "geonode:labora_t": "Tipos de laboratorios",
+        "labora_t": "Tipos de laboratorios"
+      }
+    },
+    {
+      "tab": {
+        "id": "Capas",
+        "searcheable": true,
+        "content": "Capas"
+      },
+      "type": "wmslayer",
       "peso": 63,
       "nombre": "Ordenamiento Territorial",
       "short_abstract": "Uso y Cobertura del Suelo",
@@ -638,8 +662,26 @@
       "allowed_layers": [
         "geonode:lccs_n3_2007",
         "geonode:usos_suelo",
-        "geonode:usos_suelo_cordoba"
-      ]
+        "geonode:usos_suelo_cordoba",
+        "geonode:usos_suelo_6511e8948865c3b29c69ae43a693425f",
+        "geonode:usos_suelo_9e6f51615512d46688438e0677d11892"
+      ],
+      "style_titles": {
+        "geonode:usos_suelo": "Uso primario del suelo — Santa Fe",
+        "usos_suelo": "Uso primario del suelo — Santa Fe",
+        "Uso secundario del suelo — Santa Fe": "Uso Secundario Del Suelo — Santa Fe",
+        "geonode:Uso secundario del suelo — Santa Fe": "Uso Secundario Del Suelo — Santa Fe",
+        "geonode:usos_suelo_cordoba": "Uso primario del suelo — Córdoba",
+        "usos_suelo_cordoba": "Uso primario del suelo — Córdoba",
+        "Uso secundario del suelo — Cordoba": "Uso Secundario Del Suelo — Córdoba",
+        "geonode:Uso secundario del suelo — Cordoba": "Uso Secundario Del Suelo — Córdoba",
+        "geonode:usos_suelo_6511e8948865c3b29c69ae43a693425f": "Uso primario del suelo — Santa Cruz",
+        "usos_suelo_6511e8948865c3b29c69ae43a693425f": "Uso primario del suelo — Santa Cruz",
+        "Uso secundario del suelo — Santa Cruz": "Uso Secundario Del Suelo — Santa Cruz",
+        "geonode:usos_suelo_9e6f51615512d46688438e0677d11892": "Uso primario del suelo — Corrientes",
+        "usos_suelo_9e6f51615512d46688438e0677d11892": "Uso primario del suelo — Corrientes",
+        "Uso secundario del suelo — Corrientes": "Uso Secundario Del Suelo — Corrientes"
+      }
     },
     {
       "tab": {
@@ -668,14 +710,24 @@
         "content": "Capas"
       },
       "type": "wmslayer",
-      "peso": 300,
-      "nombre": "Modelos digitales de elevaciones",
-      "short_abstract": "Modelos digitales de elevaciones - IGN",
+      "peso": 62,
+      "nombre": "Infraestructura y Servicios",
+      "short_abstract": "Unidades Inta, Laboratorios.",
       "class": "",
-      "seccion": "mde",
+      "seccion": "estruc",
       "servicio": "wms",
       "version": "1.3.0",
-      "host": "https://wms.ign.gob.ar/geoserver/modelos-digitales-elevaciones/wms"
+      "feature_info_format": "application/json",
+      "host": "https://geo-backend.inta.gob.ar/geoserver/wms",
+      "allowed_layers": [
+        "geonode:laboratorios"
+      ],
+      "style_titles": {
+        "labora_t": "Tipos de laboratorios",
+        "geonode:labora_t": "Tipos de laboratorios",
+        "geonode:laboratorios": "Laboratorios",
+        "laboratorios": "Laboratorios"
+      }
     },
     {
       "tab": {
