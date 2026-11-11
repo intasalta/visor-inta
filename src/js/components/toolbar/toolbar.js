@@ -3,7 +3,9 @@
  * @class
  */
 class ToolbarVisibilityToggler {
-  constructor() {}
+  constructor() {
+    window.toolbarVisibilityToggler = this;
+  }
 
   /**
    * Creates a button element and prepends/appends it to the right side of the map.
@@ -81,6 +83,45 @@ class ToolbarVisibilityToggler {
   }
 
   /**
+   * Ordena los botones de la barra superior horizontal (.leaflet-top.leaflet-left).
+   * Coloca 'Medir distancia' a la izquierda de todos, seguido de Localizar por coordenadas,
+   * Zoom Ventana (+ y -), y el resto de herramientas para evitar desplazamientos bruscos.
+   */
+  orderLeftToolbar() {
+    const container = document.querySelector(".leaflet-top.leaflet-left");
+    if (!container) return;
+
+    const desiredSelectors = [
+      ".leaflet-control-measure",
+      "#coordinateLocator",
+      "#boxZoomIn",
+      "#boxZoomOut",
+      ".leaflet-control-customgraticule",
+      "#fullscreen",
+      "#screenShoter",
+      "#pdfPrinter",
+      "#consultData",
+    ];
+
+    let prevElem = null;
+    desiredSelectors.forEach((sel) => {
+      const el = container.querySelector(sel);
+      if (el) {
+        if (prevElem === null) {
+          if (container.firstElementChild !== el) {
+            container.prepend(el);
+          }
+        } else {
+          if (prevElem.nextElementSibling !== el) {
+            prevElem.after(el);
+          }
+        }
+        prevElem = el;
+      }
+    });
+  }
+
+  /**
    * Toggles the visibility of the child nodes of the selected maps buttons.
    * @param {HTMLElement} btnTool - The button tool element.
    */
@@ -136,8 +177,23 @@ class ToolbarVisibilityToggler {
       observer.observe(container, { childList: true });
     }
 
+    const leftContainer = document.querySelector(".leaflet-top.leaflet-left");
+    if (leftContainer && window.MutationObserver) {
+      let isOrdering = false;
+      const leftObserver = new MutationObserver(() => {
+        if (isOrdering) return;
+        isOrdering = true;
+        this.orderLeftToolbar();
+        setTimeout(() => {
+          isOrdering = false;
+        }, 60);
+      });
+      leftObserver.observe(leftContainer, { childList: true });
+    }
+
     const applyInitial = () => {
       this.ensureTopPosition();
+      this.orderLeftToolbar();
       const rightToolbar = document.querySelector(".leaflet-top.leaflet-right");
       const leftToolbar = document.querySelector(".leaflet-top.leaflet-left");
 
@@ -153,5 +209,6 @@ class ToolbarVisibilityToggler {
     setTimeout(applyInitial, 200);
     setTimeout(applyInitial, 800);
     setTimeout(applyInitial, 1800);
+    setTimeout(applyInitial, 3000);
   }
 }
