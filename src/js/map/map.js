@@ -551,6 +551,9 @@ $("body").on("pluginLoad", function (event, plugin) {
             });
             measureControl.addTo(mapa);
             gestorMenu.plugins["Measure"].setStatus("visible");
+            if (window.toolbarVisibilityToggler) {
+              window.toolbarVisibilityToggler.orderLeftToolbar();
+            }
           }
           break;
         case "geoprocessing":
