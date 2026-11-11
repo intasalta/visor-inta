@@ -1,5 +1,92 @@
 "use strict";
 
+// Catálogo precargado de coberturas ráster conocidas de GeoINTA (WCS)
+const INTA_RASTER_COVERAGES = new Set([
+  "geonode:mapa_cos_nacional",
+  "geonode:mnc_invierno_2019",
+  "geonode:invierno2020",
+  "geonode:mnc_invierno2021",
+  "geonode:mnc_invierno2022",
+  "geonode:mnc_invierno2023_d86dd2aa0b678a011b89830f77cec883",
+  "geonode:mnc_2018_2019_v1r1",
+  "geonode:mnc_verano_2020",
+  "geonode:mnc_verano2021",
+  "geonode:mnc_verano2022",
+  "geonode:mnc_verano_2023",
+  "geonode:mnc_verano2024_f300268fd112b0ec3ef5f731edb78882",
+  "geonode:region_9b_playasmarismascostapatagonica_comba79eaa95809c",
+  "geonode:region_5b_riachosesteroschacohumedo_v269ee49d4ac65",
+  "geonode:a__01_ep", "geonode:a__01_p_ep", "geonode:a__01_pp",
+  "geonode:a__02_ep", "geonode:a__02_p_ep", "geonode:a__02_pp",
+  "geonode:a__03_ep", "geonode:a__03_p_ep", "geonode:a__03_pp",
+  "geonode:a__04_ep", "geonode:a__04_p_ep",
+  "geonode:a__05_ep", "geonode:a__05_p_ep",
+  "geonode:a__06_ep", "geonode:a__06_p_ep",
+  "geonode:a__07_ep", "geonode:a__07_p_ep",
+  "geonode:a__08_ep", "geonode:a__08_p_ep",
+  "geonode:a__09_ep", "geonode:a__09_p_ep",
+  "geonode:a__10_ep", "geonode:a__10_p_ep",
+  "geonode:a__11_ep", "geonode:a__11_p_ep",
+  "geonode:a__12_ep", "geonode:a__12_p_ep",
+  "geonode:erosion_actual_pilcomayo",
+  "geonode:erosion_bermejo_inferior_actual",
+  "geonode:erosion_bermejo_superior_actual",
+  "geonode:erosion_bermejo_superior_potencial",
+  "geonode:erosion_juramento_actual",
+  "geonode:erosion_potencial_bermejo_inferior",
+  "geonode:erosion_potencial_juramento",
+  "geonode:erosion_potencial_pilcomayo",
+  "geonode:geonode__04pp",
+  "geonode:geonode__05_pp_clip",
+  "geonode:geonode__06_pp",
+  "geonode:geonode__07_pp",
+  "geonode:geonode__08_pp",
+  "geonode:geonode__09_pp",
+  "geonode:geonode__10_pp",
+  "geonode:geonode__11_pp",
+  "geonode:geonode__12_pp",
+  "geonode:geonode_pp_def",
+  "geonode:indice_aridez_demartone",
+  "geonode:p_ep_balanceh",
+  "geonode:precipitacion_anual",
+  "geonode:saltajujuy_ip_clima",
+  "geonode:saltajujuy_ip_edafico",
+  "geonode:saltajujuy_ip_final",
+  "geonode:saltajujuy_ip_topografia"
+]);
+
+// Carga en segundo plano de capacidades WCS de los servidores INTA para capas adicionales
+if (typeof window !== "undefined" && !window._intaWcsCoverages) {
+  window._intaWcsCoverages = new Set();
+  const wcsServers = [
+    "https://geo-backend.inta.gob.ar/geoserver/wcs?service=WCS&version=1.0.0&request=GetCapabilities",
+    "https://geo-nodo01.inta.gob.ar/geoserver/wcs?service=WCS&version=1.0.0&request=GetCapabilities",
+    "https://geo-nodo05.inta.gob.ar/geoserver/wcs?service=WCS&version=1.0.0&request=GetCapabilities"
+  ];
+  wcsServers.forEach((serverUrl) => {
+    try {
+      fetch(serverUrl)
+        .then((r) => r.text())
+        .then((xml) => {
+          const regex = /<wcs:name>([^<]+)<\/wcs:name>/g;
+          let m;
+          while ((m = regex.exec(xml)) !== null) {
+            const val = m[1].trim().toLowerCase();
+            if (val && val !== "my geoserver wcs") {
+              window._intaWcsCoverages.add(val);
+              if (val.includes(":")) {
+                const raw = val.split(":")[1];
+                window._intaWcsCoverages.add(raw);
+                window._intaWcsCoverages.add(raw.replace(/_[a-f0-9]{20,}$/i, ""));
+              }
+            }
+          }
+        })
+        .catch(() => {});
+    } catch (e) {}
+  });
+}
+
 class IClipLayer {
   constructor() {
     this.name = "Recortar capa";
@@ -25,9 +112,9 @@ class IClipLayer {
         element: "select",
         id: "select-formato",
         options: [
-          { value: "geojson", text: "GeoJSON (.geojson)" },
-          { value: "kml", text: "KML (.kml)" },
-          { value: "shp", text: "Shapefile (.zip / GeoJSON)" },
+          { value: "geojson", text: "GeoJSON (.geojson) [Vectorial]" },
+          { value: "kml", text: "KML (.kml) [Vectorial]" },
+          { value: "shp", text: "Shapefile (.zip / GeoJSON) [Vectorial]" },
         ],
       },
       {
@@ -43,6 +130,70 @@ class IClipLayer {
         onclick: () => this.drawRectangle(),
       },
     ];
+  }
+
+  onLayerSelectionChange(layerName) {
+    const formatSelect = document.getElementById("select-formato") || document.getElementById("select-formatodedescarga");
+    if (!formatSelect) return;
+
+    if (!layerName) {
+      formatSelect.innerHTML = "<option value=''>Seleccione una capa</option>";
+      return;
+    }
+
+    const isVector = this.isVectorLayer(layerName);
+    formatSelect.innerHTML = "";
+
+    if (!isVector) {
+      // Opciones para capas ráster
+      const optZip = document.createElement("option");
+      optZip.value = "geotiff_sld_zip";
+      optZip.text = "GeoTIFF + Estilo SLD (.zip) [Ráster]";
+      optZip.selected = true;
+      formatSelect.appendChild(optZip);
+
+      const optTif = document.createElement("option");
+      optTif.value = "geotiff";
+      optTif.text = "GeoTIFF (.tif) solo [Ráster]";
+      formatSelect.appendChild(optTif);
+
+      this.selectedFormat = "geotiff_sld_zip";
+    } else {
+      // Opciones para capas vectoriales
+      const optGeojson = document.createElement("option");
+      optGeojson.value = "geojson";
+      optGeojson.text = "GeoJSON (.geojson) [Vectorial]";
+      optGeojson.selected = true;
+      formatSelect.appendChild(optGeojson);
+
+      const optKml = document.createElement("option");
+      optKml.value = "kml";
+      optKml.text = "KML (.kml) [Vectorial]";
+      formatSelect.appendChild(optKml);
+
+      const optShp = document.createElement("option");
+      optShp.value = "shp";
+      optShp.text = "Shapefile (.zip / GeoJSON) [Vectorial]";
+      formatSelect.appendChild(optShp);
+
+      this.selectedFormat = "geojson";
+    }
+
+    formatSelect.value = this.selectedFormat;
+  }
+
+  async ensureJSZip() {
+    if (typeof JSZip !== "undefined") return window.JSZip;
+    return new Promise((resolve) => {
+      const script = document.createElement("script");
+      script.src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
+      script.onload = () => resolve(window.JSZip || null);
+      script.onerror = () => {
+        console.warn("No se pudo cargar JSZip desde CDN.");
+        resolve(null);
+      };
+      document.head.appendChild(script);
+    });
   }
 
   drawPolygon() {
@@ -613,27 +764,110 @@ ${placemarks}</Document>
     return "the_geom";
   }
 
-  isVectorLayer(layerName) {
+  static isRasterName(layerName) {
+    if (!layerName) return false;
+    const nameLower = String(layerName).toLowerCase().trim();
+    const rawName = nameLower.includes(":") ? nameLower.split(":")[1] : nameLower;
+    const baseName = rawName.replace(/_[a-f0-9]{20,}$/i, "");
+    const prefixedName = `geonode:${rawName}`;
+    const prefixedBase = `geonode:${baseName}`;
+
+    // 1. Capas subidas localmente por el usuario vectoriales o ráster
+    if (typeof addedLayers !== "undefined" && Array.isArray(addedLayers)) {
+      const added = addedLayers.find((l) => l && (l.name === layerName || l.id === layerName));
+      if (added && (added.type === "geotiff" || added.type === "tif" || added.type === "tiff")) {
+        return true;
+      }
+      if (added && (added.type === "geojson" || added.type === "shp" || added.type === "kml" || added.type === "geoprocess")) {
+        return false;
+      }
+    }
+
+    // 2. Coberturas WCS dinámicas obtenidas del servidor GeoServer INTA
+    if (typeof window !== "undefined" && window._intaWcsCoverages) {
+      if (
+        window._intaWcsCoverages.has(nameLower) ||
+        window._intaWcsCoverages.has(rawName) ||
+        window._intaWcsCoverages.has(baseName) ||
+        window._intaWcsCoverages.has(prefixedName) ||
+        window._intaWcsCoverages.has(prefixedBase)
+      ) {
+        return true;
+      }
+    }
+
+    // 3. Catálogo base precargado de coberturas ráster WCS de INTA
+    if (
+      INTA_RASTER_COVERAGES.has(nameLower) ||
+      INTA_RASTER_COVERAGES.has(rawName) ||
+      INTA_RASTER_COVERAGES.has(baseName) ||
+      INTA_RASTER_COVERAGES.has(prefixedName) ||
+      INTA_RASTER_COVERAGES.has(prefixedBase)
+    ) {
+      return true;
+    }
+
+    // 4. Patrones de nomenclatura de coberturas ráster en GeoServer INTA y GeoNode
+    // Coincide con capas como: 01_p_ep_..., 01_pp_..., 01_tempera_..., texclass, mnc, balanceh, aridez, etc.
+    const rasterPatterns = [
+      /(^|:|_)(0[1-9]|1[0-2])_p_ep(_|$)/i,
+      /(^|:|_)(0[1-9]|1[0-2])_pp(_|$)/i,
+      /(^|:|_)(0[1-9]|1[0-3])_tempera(_|$)/i,
+      /(^|:|_)(04pp|05_pp_clip|precipitacion_anual|p_ep_balanceh|balanceh|indice_aridez|indice_aridez_demartone)(_|$)/i,
+      /(^|:|_)(mnc_|texclass_|lccs_|ire_|nro_cultivos_|numero_cereales_|numero_s1_|rotaciones_)/i,
+      /(^|:|_)(a__\d\d_|geonode__\d\d_|erosion_|mapa_cos_|saltajujuy_ip_|deficit|temperatura|evapotranspiracion|dem_|mde_|srtm_|alos_)/i
+    ];
+    for (const pat of rasterPatterns) {
+      if (pat.test(nameLower) || pat.test(rawName) || pat.test(baseName)) {
+        return true;
+      }
+    }
+
+    // 5. Metadatos de la sección o capa en gestorMenu
     if (typeof gestorMenu !== "undefined") {
-      if (gestorMenu.layersDataForWfs && gestorMenu.layersDataForWfs.hasOwnProperty(layerName)) {
-        return true;
-      }
-      const data = gestorMenu.getLayerData ? gestorMenu.getLayerData(layerName) : null;
-      if (data && data.capa) {
-        if (data.capa.tipo === "raster") return false;
-        if (typeof capaEsVector === "function" && capaEsVector(data.capa)) return true;
-        return true;
+      try {
+        if (gestorMenu.items) {
+          for (const secKey in gestorMenu.items) {
+            const sec = gestorMenu.items[secKey];
+            if (!sec) continue;
+            const secId = String(sec.seccion || "").toLowerCase();
+            const secNom = String(sec.nombre || "").toLowerCase();
+            const isRasterSection = secId === "clima" || secId === "mde" || secNom.includes("clima") || secNom.includes("elevaci");
+
+            if (sec.itemsComposite) {
+              for (const itKey in sec.itemsComposite) {
+                const it = sec.itemsComposite[itKey];
+                if (it && (it.nombre === layerName || (it.capa && it.capa.nombre === layerName))) {
+                  if (isRasterSection) return true;
+                  if (it.capa && (it.capa.tipo === "raster" || it.capa.servicio === "wcs")) return true;
+                  if (it.capa && (it.capa.tipo === "vector" || it.capa.servicio === "wfs")) return false;
+                }
+              }
+            }
+          }
+        }
+      } catch (e) {}
+
+      if (typeof gestorMenu.getLayerData === "function") {
+        try {
+          const data = gestorMenu.getLayerData(layerName);
+          if (data && data.capa) {
+            if (data.capa.tipo === "raster" || data.capa.servicio === "wcs") return true;
+            if (data.capa.tipo === "vector" || data.capa.servicio === "wfs") return false;
+          }
+        } catch (e) {}
       }
     }
 
-    if (typeof addedLayers !== "undefined") {
-      const added = addedLayers.find((l) => l.name === layerName || l.id === layerName);
-      if (added && (added.type === "geoprocess" || added.type === "geojson" || added.type === "shp" || added.type === "kml" || added.type === "WFS" || added.type === "WMS")) {
-        return true;
-      }
-    }
+    return false;
+  }
 
-    return true;
+  isRasterLayer(layerName) {
+    return IClipLayer.isRasterName(layerName);
+  }
+
+  isVectorLayer(layerName) {
+    return !this.isRasterLayer(layerName);
   }
 
   findLayerInfo(layerName) {
@@ -801,17 +1035,12 @@ ${placemarks}</Document>
     const formatSelect = document.getElementById("select-formato") || document.getElementById("select-formatodedescarga");
 
     if (!capaSelect || !capaSelect.value) {
-      new UserMessage("Por favor seleccione una capa vectorial activa para recortar.", true, "warning");
+      new UserMessage("Por favor seleccione una capa activa para recortar.", true, "warning");
       return;
     }
 
     const layerName = capaSelect.value;
     const format = formatSelect ? formatSelect.value : "geojson";
-
-    if (!this.isVectorLayer(layerName)) {
-      new UserMessage("La capa seleccionada parece ser de tipo ráster. El recorte solo aplica a capas vectoriales.", true, "warning");
-      return;
-    }
 
     const drawnShape = this.getDrawnShape();
     if (!drawnShape) {
@@ -819,16 +1048,68 @@ ${placemarks}</Document>
       return;
     }
 
-    const cqlPolygon = this.getPolygonWkt(drawnShape);
-    if (!cqlPolygon) {
-      new UserMessage("Geometría de recorte no válida. Por favor vuelva a dibujarla.", true, "warning");
-      return;
-    }
-
     // Buscar información de la capa
     const layerInfo = this.findLayerInfo(layerName);
     if (!layerInfo) {
       new UserMessage("No se encontró la configuración del servicio para la capa seleccionada.", true, "error");
+      return;
+    }
+
+    const cleanLayerName = layerName.split(":").pop();
+    const clipPoly = this.getClipPolygonTurf(drawnShape);
+    if (!clipPoly) {
+      new UserMessage("No se pudo construir la geometría del polígono de recorte.", true, "error");
+      return;
+    }
+
+    let areaKm2 = 0;
+    try {
+      if (typeof turf !== "undefined") {
+        areaKm2 = turf.area(clipPoly) / 1000000;
+      }
+    } catch (e) {}
+
+    const isVector = this.isVectorLayer(layerName);
+    const isRaster = !isVector || format === "geotiff" || format === "geotiff_sld_zip";
+
+    // =========================================================================
+    // CASO RÁSTER: Descarga de cobertura GeoTIFF vía WCS + Estilo SLD vía WMS
+    // =========================================================================
+    if (isRaster) {
+      const MAX_RASTER_KM2 = 2500;
+      if (areaKm2 > MAX_RASTER_KM2) {
+        new UserMessage(
+          `El área seleccionada (${areaKm2.toFixed(1)} km²) supera el límite máximo permitido para recorte ráster (${MAX_RASTER_KM2} km²). Por favor dibuje un área menor para evitar saturar el servidor GeoServer.`,
+          true,
+          "warning"
+        );
+        return;
+      }
+
+      loadingBtn("on", "ejec_gp");
+      const loaderEl = document.getElementById("download-loader");
+      if (loaderEl) loaderEl.style.display = "none";
+      if (typeof hideDownloadLoader === "function") hideDownloadLoader();
+
+      try {
+        await this.executeRasterClip(layerName, layerInfo, clipPoly, format, drawnShape, cleanLayerName, areaKm2);
+      } catch (err) {
+        console.error("Error en recorte ráster:", err);
+        new UserMessage(err.message || "Ocurrió un error al procesar el recorte ráster.", true, "error");
+      } finally {
+        loadingBtn("off", "ejec_gp");
+        if (loaderEl) loaderEl.style.display = "none";
+        if (typeof hideDownloadLoader === "function") hideDownloadLoader();
+      }
+      return;
+    }
+
+    // =========================================================================
+    // CASO VECTORIAL: Recorte geométrico exacto con Turf
+    // =========================================================================
+    const cqlPolygon = this.getPolygonWkt(drawnShape);
+    if (!cqlPolygon) {
+      new UserMessage("Geometría de recorte no válida. Por favor vuelva a dibujarla.", true, "warning");
       return;
     }
 
@@ -884,7 +1165,19 @@ ${placemarks}</Document>
 
       // Detectar la columna de geometría
       const geomField = await this.detectGeometryColumn(wfsUrl, layerName);
-      const cqlFilter = `INTERSECTS(${geomField},${cqlPolygon})`;
+
+      // Calcular BBOX en EPSG:4326 a partir del polígono de recorte
+      const bbox = turf.bbox(clipPoly);
+      const minX = bbox[0].toFixed(6);
+      const minY = bbox[1].toFixed(6);
+      const maxX = bbox[2].toFixed(6);
+      const maxY = bbox[3].toFixed(6);
+
+      // Construir filtro espacial:
+      // Usamos BBOX(geom, minX, minY, maxX, maxY, 'EPSG:4326') que instruye a GeoServer
+      // a reproyectar el área de consulta automáticamente a cualquier SRC nativo de la capa
+      // (crucial para capas proyectadas en POSGAR/Gauss-Kruger como EPSG:5347 usos_suelo).
+      const cqlFilterBbox = `BBOX(${geomField},${minX},${minY},${maxX},${maxY},'EPSG:4326')`;
 
       // Petición WFS para obtener los elementos intersectantes en GeoJSON
       const geojsonParams = new URLSearchParams({
@@ -894,17 +1187,33 @@ ${placemarks}</Document>
         typeName: layerName,
         outputFormat: "application/json",
         srsName: "EPSG:4326",
-        cql_filter: cqlFilter,
+        cql_filter: cqlFilterBbox,
       });
 
-      const geojsonUrl = `${wfsUrl}?${geojsonParams.toString()}`;
-      const geojsonResp = await fetch(geojsonUrl);
+      let geojsonUrl = `${wfsUrl}?${geojsonParams.toString()}`;
+      let geojsonResp = await fetch(geojsonUrl);
+      let geojsonText = await geojsonResp.text();
 
-      if (!geojsonResp.ok) {
-        throw new Error(`Error en servidor WFS (${geojsonResp.status} ${geojsonResp.statusText}).`);
+      // Fallback a INTERSECTS si el servidor no admite BBOX con SRC explícito
+      if (!geojsonResp.ok || geojsonText.includes("ExceptionReport") || geojsonText.includes("ServiceException")) {
+        const fallbackParams = new URLSearchParams({
+          service: "WFS",
+          version: "1.0.0",
+          request: "GetFeature",
+          typeName: layerName,
+          outputFormat: "application/json",
+          srsName: "EPSG:4326",
+          cql_filter: `INTERSECTS(${geomField},${cqlPolygon})`,
+        });
+        const fbResp = await fetch(`${wfsUrl}?${fallbackParams.toString()}`);
+        if (fbResp.ok) {
+          const fbText = await fbResp.text();
+          if (!fbText.includes("ExceptionReport") && !fbText.includes("ServiceException")) {
+            geojsonResp = fbResp;
+            geojsonText = fbText;
+          }
+        }
       }
-
-      const geojsonText = await geojsonResp.text();
       if (geojsonText.includes("ExceptionReport") || geojsonText.includes("ServiceException")) {
         throw new Error("El servicio WFS rechazó la consulta espacial. Verifique que la capa sea vectorial y admita WFS.");
       }
@@ -961,5 +1270,225 @@ ${placemarks}</Document>
       if (loaderEl) loaderEl.style.display = "none";
       if (typeof hideDownloadLoader === "function") hideDownloadLoader();
     }
+  }
+
+  async executeRasterClip(layerName, layerInfo, clipPoly, format, drawnShape, cleanLayerName, areaKm2) {
+    const rawHost = layerInfo.host || "";
+    if (!rawHost) {
+      throw new Error("No se pudo obtener la URL del servidor para la capa seleccionada.");
+    }
+
+    let wcsHost = rawHost.replace(/\/wms\/?$/i, "/wcs").replace(/\/wfs\/?$/i, "/wcs");
+    let wmsHost = rawHost.replace(/\/wcs\/?$/i, "/wms").replace(/\/wfs\/?$/i, "/wms");
+    if (!wcsHost.includes("/geoserver/wcs") && wcsHost.includes("/geoserver")) {
+      wcsHost = wcsHost.replace(/\/geoserver.*/, "/geoserver/wcs");
+    }
+    if (!wmsHost.includes("/geoserver/wms") && wmsHost.includes("/geoserver")) {
+      wmsHost = wmsHost.replace(/\/geoserver.*/, "/geoserver/wms");
+    }
+
+    const bbox = turf.bbox(clipPoly);
+    const minX = bbox[0].toFixed(6);
+    const minY = bbox[1].toFixed(6);
+    const maxX = bbox[2].toFixed(6);
+    const maxY = bbox[3].toFixed(6);
+
+    let tiffBlob = null;
+    let lastError = "";
+
+    // Calcular resolución adecuada para WCS 1.0.0 (requiere width y height en GeoServer)
+    const dx = Math.abs(parseFloat(maxX) - parseFloat(minX));
+    const dy = Math.abs(parseFloat(maxY) - parseFloat(minY));
+    const aspect = (dx / (dy || 0.0001)) || 1;
+    let reqWidth = Math.round(Math.min(1800, Math.max(600, Math.sqrt((areaKm2 || 100) * 10000) * aspect)));
+    let reqHeight = Math.round(reqWidth / aspect);
+    if (reqWidth > 2000) { reqWidth = 2000; reqHeight = Math.round(reqWidth / aspect); }
+    if (reqHeight > 2000) { reqHeight = 2000; reqWidth = Math.round(reqHeight * aspect); }
+    if (reqWidth < 300) reqWidth = 300;
+    if (reqHeight < 300) reqHeight = 300;
+
+    // 1. Probar WCS 1.0.0 con width y height (estándar GeoServer GeoINTA)
+    try {
+      const wcs1Url = `${wcsHost}?service=WCS&version=1.0.0&request=GetCoverage&coverage=${encodeURIComponent(layerName)}&bbox=${minX},${minY},${maxX},${maxY}&crs=EPSG:4326&format=GeoTIFF&width=${reqWidth}&height=${reqHeight}`;
+      const r1 = await fetch(wcs1Url);
+      if (r1.ok) {
+        const ct = r1.headers.get("content-type") || "";
+        if (!ct.includes("xml") && !ct.includes("html") && !ct.includes("text")) {
+          tiffBlob = await r1.blob();
+        } else {
+          const txt = await r1.text();
+          if (!txt.includes("Exception") && !txt.includes("ServiceException")) {
+            tiffBlob = new Blob([txt], { type: "image/tiff" });
+          } else {
+            lastError = txt;
+          }
+        }
+      } else {
+        lastError = `Código HTTP ${r1.status}: ${r1.statusText}`;
+      }
+    } catch (e) {
+      lastError = e.message;
+    }
+
+    // 2. Probar WCS 2.0.1 con identificador normalizado (geonode__nombre)
+    if (!tiffBlob) {
+      try {
+        const covId2 = layerName.includes(":") ? layerName.replace(/:/g, "__") : `geonode__${layerName}`;
+        const wcs2Url = `${wcsHost}?service=WCS&version=2.0.1&request=GetCoverage&coverageId=${encodeURIComponent(covId2)}&format=image/tiff&subset=Long(${minX},${maxX})&subset=Lat(${minY},${maxY})`;
+        const r2 = await fetch(wcs2Url);
+        if (r2.ok) {
+          const ct = r2.headers.get("content-type") || "";
+          if (!ct.includes("xml") && !ct.includes("html") && !ct.includes("text")) {
+            tiffBlob = await r2.blob();
+          } else {
+            const txt = await r2.text();
+            if (!txt.includes("Exception") && !txt.includes("ServiceException")) {
+              tiffBlob = new Blob([txt], { type: "image/tiff" });
+            }
+          }
+        }
+      } catch (e) {
+        console.warn("WCS 2.0.1 no respondió...", e);
+      }
+    }
+
+    // 3. Fallback adicional con format=image/tiff en WCS 1.0.0
+    if (!tiffBlob) {
+      try {
+        const wcs1bUrl = `${wcsHost}?service=WCS&version=1.0.0&request=GetCoverage&coverage=${encodeURIComponent(layerName)}&bbox=${minX},${minY},${maxX},${maxY}&crs=EPSG:4326&format=image/tiff&width=${reqWidth}&height=${reqHeight}`;
+        const r1b = await fetch(wcs1bUrl);
+        if (r1b.ok) {
+          const ct = r1b.headers.get("content-type") || "";
+          if (!ct.includes("xml") && !ct.includes("html") && !ct.includes("text")) {
+            tiffBlob = await r1b.blob();
+          }
+        }
+      } catch (e) {}
+    }
+
+    // 4. Fallback con nombre limpio sin prefijo de espacio de trabajo
+    if (!tiffBlob && cleanLayerName !== layerName) {
+      try {
+        const wcsCleanUrl = `${wcsHost}?service=WCS&version=1.0.0&request=GetCoverage&coverage=${encodeURIComponent(cleanLayerName)}&bbox=${minX},${minY},${maxX},${maxY}&crs=EPSG:4326&format=GeoTIFF&width=${reqWidth}&height=${reqHeight}`;
+        const rClean = await fetch(wcsCleanUrl);
+        if (rClean.ok) {
+          const ct = rClean.headers.get("content-type") || "";
+          if (!ct.includes("xml") && !ct.includes("html") && !ct.includes("text")) {
+            tiffBlob = await rClean.blob();
+          }
+        }
+      } catch (e) {}
+    }
+
+    // 5. Fallback con nombre base sin sufijo hash de GeoNode (ej: 01_p_ep)
+    const baseCleanName = cleanLayerName.replace(/_[a-f0-9]{20,}$/i, "");
+    if (!tiffBlob && baseCleanName !== cleanLayerName) {
+      const candidateNames = [`geonode:${baseCleanName}`, baseCleanName];
+      for (const covName of candidateNames) {
+        if (tiffBlob) break;
+        try {
+          const wcsBaseUrl = `${wcsHost}?service=WCS&version=1.0.0&request=GetCoverage&coverage=${encodeURIComponent(covName)}&bbox=${minX},${minY},${maxX},${maxY}&crs=EPSG:4326&format=GeoTIFF&width=${reqWidth}&height=${reqHeight}`;
+          const rBase = await fetch(wcsBaseUrl);
+          if (rBase.ok) {
+            const ct = rBase.headers.get("content-type") || "";
+            if (!ct.includes("xml") && !ct.includes("html") && !ct.includes("text")) {
+              tiffBlob = await rBase.blob();
+            }
+          }
+        } catch (e) {}
+      }
+    }
+
+    // 6. Fallback vía WMS GetMap con formato GeoTIFF nativo de GeoServer
+    if (!tiffBlob) {
+      const wmsTiffFormats = ["image/geotiff", "image/tiff"];
+      for (const wmsFmt of wmsTiffFormats) {
+        if (tiffBlob) break;
+        try {
+          const wmsTiffUrl = `${wmsHost}?service=WMS&version=1.1.1&request=GetMap&layers=${encodeURIComponent(layerName)}&bbox=${minX},${minY},${maxX},${maxY}&width=${reqWidth}&height=${reqHeight}&srs=EPSG:4326&format=${encodeURIComponent(wmsFmt)}`;
+          const rWms = await fetch(wmsTiffUrl);
+          if (rWms.ok) {
+            const ct = rWms.headers.get("content-type") || "";
+            if (!ct.includes("xml") && !ct.includes("html") && !ct.includes("text")) {
+              tiffBlob = await rWms.blob();
+            }
+          }
+        } catch (e) {}
+      }
+    }
+
+    if (!tiffBlob) {
+      throw new Error(`El servidor ráster (${wcsHost}) no pudo procesar la cobertura seleccionada. Verifique la disponibilidad del servicio. ${lastError ? "Detalle: " + lastError.slice(0, 150) : ""}`);
+    }
+
+    // Obtener estilo SLD vía WMS GetStyles
+    let sldText = null;
+    try {
+      const sldUrl = `${wmsHost}?service=WMS&version=1.1.1&request=GetStyles&layers=${encodeURIComponent(layerName)}`;
+      const sldResp = await fetch(sldUrl);
+      if (sldResp.ok) {
+        const txt = await sldResp.text();
+        if (!txt.includes("ServiceException") && (txt.includes("<StyledLayerDescriptor") || txt.includes("<sld:StyledLayerDescriptor") || txt.includes("NamedLayer"))) {
+          sldText = txt;
+        }
+      }
+    } catch (e) {
+      console.warn("No se pudo obtener el estilo SLD de la capa:", e);
+    }
+
+    // Empaquetar y descargar
+    if (format === "geotiff_sld_zip") {
+      const jszipClass = await this.ensureJSZip();
+      if (!jszipClass) {
+        downloadBlob(tiffBlob, `${cleanLayerName}_recorte.tif`);
+        new UserMessage("Se descargó el archivo GeoTIFF (la librería ZIP no estuvo disponible).", true, "information");
+      } else {
+        const zip = new jszipClass();
+        zip.file(`${cleanLayerName}_recorte.tif`, tiffBlob);
+        if (sldText) {
+          zip.file(`${cleanLayerName}_estilo.sld`, sldText);
+        }
+        const readme = `========================================================================
+RECORTE RÁSTER - INTA DIGITAL GEO
+========================================================================
+Capa ráster: ${cleanLayerName} (${layerName})
+Fecha y hora de descarga: ${new Date().toLocaleString("es-AR")}
+Área aproximada del recorte: ${areaKm2.toFixed(2)} km²
+Servidor WCS origen: ${wcsHost}
+
+Extensión espacial BBOX (EPSG:4326 - WGS84):
+  Oeste (Longitud Mínima): ${minX}°
+  Sur (Latitud Mínima):    ${minY}°
+  Este (Longitud Máxima):  ${maxX}°
+  Norte (Latitud Máxima):  ${maxY}°
+========================================================================
+`;
+        zip.file("LEEME_METADATOS.txt", readme);
+        const zipBlob = await zip.generateAsync({ type: "blob" });
+        downloadBlob(zipBlob, `${cleanLayerName}_recorte.zip`);
+      }
+    } else {
+      downloadBlob(tiffBlob, `${cleanLayerName}_recorte.tif`);
+    }
+
+    // Representación visual del BBOX recortado en el mapa
+    const bboxPolygon = turf.bboxPolygon(bbox);
+    bboxPolygon.properties = {
+      title: `Recorte Ráster: ${cleanLayerName}`,
+      layer: cleanLayerName,
+      areaKm2: areaKm2.toFixed(2),
+      type: "raster_clip",
+    };
+    const resultGeoJSON = {
+      type: "FeatureCollection",
+      features: [bboxPolygon],
+    };
+
+    if (geoProcessingManager && typeof geoProcessingManager.displayResult === "function") {
+      geoProcessingManager.displayResult(resultGeoJSON, drawnShape);
+    }
+
+    this.cleanupDrawnShape(drawnShape);
+    new UserMessage(`Recorte ráster (${areaKm2.toFixed(1)} km²) descargado exitosamente.`, true, "information");
   }
 }

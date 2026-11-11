@@ -6,7 +6,7 @@ class ToolbarVisibilityToggler {
   constructor() {}
 
   /**
-   * Creates a button element and appends it to the right side of the map.
+   * Creates a button element and prepends/appends it to the right side of the map.
    *
    * @param {string} id - The ID of the button element.
    * @param {string} btnId - The ID of the parent div element.
@@ -14,37 +14,70 @@ class ToolbarVisibilityToggler {
    * @param {string} iconClass - The CSS class for the icon element.
    */
   createBtn(id, btnId, title, iconClass) {
-    const elem = document.createElement("div");
-    elem.className = "leaflet-bar leaflet-control";
-    elem.id = btnId;
-    elem.title = title;
-    elem.style = "cursor: pointer;";
+    let elem = document.getElementById(btnId);
+    if (!elem) {
+      elem = document.createElement("div");
+      elem.className = "leaflet-bar leaflet-control";
+      elem.id = btnId;
+      elem.title = title;
+      elem.style = "cursor: pointer;";
 
-    const elemIcon = document.createElement("a");
-    elemIcon.id = id;
-    elemIcon.innerHTML = `<span id="map-toolbar-span" class="${iconClass}" aria-hidden="true"></span>`;
-    elem.appendChild(elemIcon);
+      const elemIcon = document.createElement("a");
+      elemIcon.id = id;
+      elemIcon.innerHTML = `<span id="map-toolbar-span" class="${iconClass}" aria-hidden="true"></span>`;
+      elem.appendChild(elemIcon);
 
-    // Event listener to toggle visibility of map buttons on click
-    elem.addEventListener("click", (e) => {
-      e.stopPropagation(); // Prevent click event propagation
-      const btnToolId =
-        e.target.offsetParent.id === "hideBtnRight"
-          ? ".leaflet-top.leaflet-right"
-          : ".leaflet-top.leaflet-left";
-      const btnTool = document.querySelector(btnToolId);
+      // Event listener to toggle visibility of map buttons on click
+      elem.addEventListener("click", (e) => {
+        e.stopPropagation(); // Prevent click event propagation
+        const btnToolId =
+          elem.id === "hideBtnRight"
+            ? ".leaflet-top.leaflet-right"
+            : ".leaflet-top.leaflet-left";
+        const btnTool = document.querySelector(btnToolId);
+        if (btnTool) {
+          this.toggleToolbarVisibility(btnTool);
+        }
+      });
 
-      // Iterate through each child node of the selected maps buttons and toggle visibility
-      this.toggleToolbarVisibility(btnTool);
-    });
+      // Event listener to prevent zoom on double-click
+      elem.addEventListener("dblclick", (e) => {
+        e.stopPropagation(); // Prevent double-click event propagation
+      });
+    }
 
-    // Event listener to prevent zoom on double-click
-    elem.addEventListener("dblclick", (e) => {
-      e.stopPropagation(); // Prevent double-click event propagation
-    });
+    const container = document.querySelector(".leaflet-top.leaflet-right");
+    if (container) {
+      if (btnId === "hideBtnLeft") {
+        container.prepend(elem);
+      } else if (btnId === "hideBtnRight") {
+        const leftBtn = document.getElementById("hideBtnLeft");
+        if (leftBtn && leftBtn.parentNode === container) {
+          leftBtn.after(elem);
+        } else {
+          container.prepend(elem);
+        }
+      } else {
+        container.appendChild(elem);
+      }
+    }
+  }
 
-    // Append the created button to the right side of the map
-    document.querySelector(".leaflet-top.leaflet-right").appendChild(elem);
+  /**
+   * Asegura que los botones 'hideBtnLeft' y 'hideBtnRight' se mantengan siempre arriba.
+   */
+  ensureTopPosition() {
+    const container = document.querySelector(".leaflet-top.leaflet-right");
+    const leftBtn = document.getElementById("hideBtnLeft");
+    const rightBtn = document.getElementById("hideBtnRight");
+    if (container && leftBtn) {
+      if (container.firstElementChild !== leftBtn) {
+        container.prepend(leftBtn);
+      }
+      if (rightBtn && leftBtn.nextElementSibling !== rightBtn) {
+        leftBtn.after(rightBtn);
+      }
+    }
   }
 
   /**
@@ -52,10 +85,10 @@ class ToolbarVisibilityToggler {
    * @param {HTMLElement} btnTool - The button tool element.
    */
   toggleToolbarVisibility(btnTool) {
-    // Iterate through each child node of the selected maps buttons and toggle visibility
+    if (!btnTool) return;
     btnTool.childNodes.forEach((node) => {
       // Toggle visibility for nodes that are not "hideBtnRight" or "hideBtnLeft"
-      if (node.id !== "hideBtnRight" && node.id !== "hideBtnLeft") {
+      if (node.nodeType === 1 && node.id !== "hideBtnRight" && node.id !== "hideBtnLeft") {
         node.hidden = !node.hidden;
       }
     });
@@ -67,8 +100,9 @@ class ToolbarVisibilityToggler {
    * @param {boolean} show - Whether to show or hide the toolbar.
    */
   hideToolbar(toolbar, show) {
+    if (!toolbar) return;
     toolbar.childNodes.forEach((node) => {
-      if (node.id !== "hideBtnRight" && node.id !== "hideBtnLeft") {
+      if (node.nodeType === 1 && node.id !== "hideBtnRight" && node.id !== "hideBtnLeft") {
         node.hidden = !show;
       }
     });
@@ -94,14 +128,30 @@ class ToolbarVisibilityToggler {
       "bx bxs-pencil",
     );
 
-    // Use an arrow function to ensure the 'this' context is preserved
-    window.onload = () => {
-      // Set the initial visibility of the toolbars based on the showToolbar parameter
+    const container = document.querySelector(".leaflet-top.leaflet-right");
+    if (container && window.MutationObserver) {
+      const observer = new MutationObserver(() => {
+        this.ensureTopPosition();
+      });
+      observer.observe(container, { childList: true });
+    }
+
+    const applyInitial = () => {
+      this.ensureTopPosition();
       const rightToolbar = document.querySelector(".leaflet-top.leaflet-right");
       const leftToolbar = document.querySelector(".leaflet-top.leaflet-left");
 
-      this.hideToolbar(rightToolbar, showToolbar);
-      this.hideToolbar(leftToolbar, showToolbar);
+      if (rightToolbar) this.hideToolbar(rightToolbar, showToolbar);
+      if (leftToolbar) this.hideToolbar(leftToolbar, showToolbar);
     };
+
+    if (document.readyState === "complete") {
+      applyInitial();
+    } else {
+      window.addEventListener("load", applyInitial);
+    }
+    setTimeout(applyInitial, 200);
+    setTimeout(applyInitial, 800);
+    setTimeout(applyInitial, 1800);
   }
 }

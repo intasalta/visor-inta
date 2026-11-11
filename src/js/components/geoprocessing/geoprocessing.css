@@ -1,13 +1,16 @@
 #mr {
   width: auto;
-  max-height: 450px;
+  max-width: 460px;
+  max-height: calc(100vh - 120px);
   position: absolute;
-  top: 100px;
+  top: 90px;
   left: 40%;
   background-color: white !important;
   border-radius: 8px;
-  padding: 10px;
-  overflow: hidden;
+  padding: 12px 14px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
   float: none;
   -moz-box-shadow: inset 0 0 10px #000000;
   -webkit-box-shadow: inset 0 0 10px #000000;
@@ -94,38 +97,41 @@
 @media (max-width: 768px) {
   #mr {
     left: 45px;
-    max-width: 700px;
+    max-width: calc(100vw - 60px);
+    max-height: calc(100vh - 100px);
   }
 }
 @media (max-width: 600px) {
   #mr {
     left: 45px;
-    max-width: 50%;
-    max-height: 70%;
+    max-width: calc(100vw - 60px);
+    max-height: 85vh;
   }
 }
 @media (max-width: 480px) {
   #mr {
     left: 45px;
-    max-width: 240px;
+    max-width: calc(100vw - 55px);
+    max-height: 85vh;
   }
 }
 @media (max-width: 360px) {
   #mr {
-    left: 45px;
-    max-width: 70%;
-    max-height: 50%;
+    left: 10px;
+    max-width: calc(100vw - 20px);
+    max-height: 85vh;
   }
 }
 @media (max-height: 500px) {
   #mr {
-    left: 45px;
-    max-height: 50%;
+    top: 45px;
+    max-height: calc(100vh - 55px);
   }
 }
 @media (max-height: 420px) {
   #mr {
-    max-height: 50%;
+    top: 35px;
+    max-height: calc(100vh - 45px);
   }
 }
 .disabledbutton {
@@ -182,4 +188,13 @@
   color: var(--danger-color);
   font-weight: bolder;
   text-align: center;
+}
+#msgNoVectorLayer {
+  color: #d9534f;
+  font-weight: bold;
+  text-align: center;
+  margin: 10px 0 4px 0;
+  font-size: 13px;
+  line-height: 1.4;
+  padding: 4px;
 }

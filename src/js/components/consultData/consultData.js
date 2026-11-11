@@ -347,6 +347,7 @@ function createWmsLayer(objLayer) {
     format: "image/png",
     exceptions: "xml",
     INFO_FORMAT: layerSelected.featureInfoFormat,
+    styles: layerSelected.currentStyle || "",
   });
 
   // Add the layer to the overlay maps

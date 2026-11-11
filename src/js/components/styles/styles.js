@@ -61,7 +61,6 @@ class StylesUI {
     }
     .list-group-item:hover, .file-layer:hover {
       background-color: var(--menu-section-hover-color);
-      font-weight: bold;
     }
     .featuresGroup {
     border-bottom: 2px solid var(--primary-color);

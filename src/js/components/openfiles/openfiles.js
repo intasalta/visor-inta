@@ -70,7 +70,7 @@ class UImf {
     let tab_div = document.createElement("div");
     tab_div.className = "tabs_upload";
     tab_div.innerHTML = `
-    <span style="margin:0px 10px;text-align:center">Formatos Disponibles: KML, GeoJson, GPX, SHP en formato (.zip), WKT en formato (.txt o .wkt), TopoJSON en formato (.json)</span>`;
+    <span style="margin:0px 10px;text-align:center">Formatos Disponibles: KML, GeoJSON, GPX, SHP (.zip), GeoTIFF (.tif, .tiff), WKT (.txt o .wkt), TopoJSON (.json)</span>`;
 
     let mainContainerFile = document.createElement("div");
     mainContainerFile.id = "file_gestor";
@@ -89,7 +89,7 @@ class UImf {
     divaux.className = "upload";
 
     let main_inputfile = document.createElement("input");
-    main_inputfile.accept = ".txt,.json,.geojson,.wkt,.kml,.zip,.gpx";
+    main_inputfile.accept = ".txt,.json,.geojson,.wkt,.kml,.zip,.gpx,.tif,.tiff";
     main_inputfile.id = "input_uploadfile";
     main_inputfile.name = "file";
     main_inputfile.type = "file";
@@ -137,13 +137,16 @@ class UImf {
           }
 
           // Add to current layers to add to the layers menu later
-          if (fileLayer.layerData.process) {
+          if (fileLayer.layerData && fileLayer.layerData.process) {
             currentLayers.push({
               id: fileLayer.getId(),
               layer: fileLayer.getGeoJSON(),
               name: name,
               process: fileLayer.layerData.process,
               file_name: fileLayer.getFileName(),
+              file: fileLayer.file,
+              format: fileLayer.getFormat(),
+              layerType: fileLayer.getLayerType(),
               kb: fileLayer.getFileSize("kb"),
             });
           } else {
@@ -152,6 +155,9 @@ class UImf {
               layer: fileLayer.getGeoJSON(),
               name: name,
               file_name: fileLayer.getFileName(),
+              file: fileLayer.file,
+              format: fileLayer.getFormat(),
+              layerType: fileLayer.getLayerType(),
               kb: fileLayer.getFileSize("kb"),
             });
           }
@@ -194,26 +200,31 @@ class UImf {
     btnCapa.innerHTML = "Agregar Capa";
     btnCapa.onclick = function () {
       if (control_btn_add_layer) {
-        const count = currentLayers.length;
-        addLayersfromFiles();
-        new UserMessage(`Capas agregadas exitosamente.`, true, "information");
-        
-        let alertMsg = document.getElementById("file-upload-success-alert");
-        if (!alertMsg) {
-          alertMsg = document.createElement("div");
-          alertMsg.id = "file-upload-success-alert";
-          alertMsg.className = "alert alert-success";
-          alertMsg.style = "margin: 10px auto 5px auto; width: 90%; padding: 8px 12px; font-size: 13px; text-align: center; font-weight: 600; border-radius: 4px; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb;";
-          btnCapa.after(alertMsg);
-        }
-        alertMsg.innerHTML = `<i class="fa fa-check-circle" style="margin-right:6px;"></i>¡Capa${count > 1 ? "s agregadas" : " agregada"} con éxito!`;
-        alertMsg.style.display = "block";
-        setTimeout(() => {
-          if (alertMsg) alertMsg.style.display = "none";
-        }, 5000);
+        try {
+          const count = currentLayers.length;
+          addLayersfromFiles();
+          new UserMessage(`Capas agregadas exitosamente.`, true, "information");
+          
+          let alertMsg = document.getElementById("file-upload-success-alert");
+          if (!alertMsg) {
+            alertMsg = document.createElement("div");
+            alertMsg.id = "file-upload-success-alert";
+            alertMsg.className = "alert alert-success";
+            alertMsg.style = "margin: 10px auto 5px auto; width: 90%; padding: 8px 12px; font-size: 13px; text-align: center; font-weight: 600; border-radius: 4px; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb;";
+            btnCapa.after(alertMsg);
+          }
+          alertMsg.innerHTML = `<i class="fa fa-check-circle" style="margin-right:6px;"></i>¡Capa${count > 1 ? "s agregadas" : " agregada"} con éxito!`;
+          alertMsg.style.display = "block";
+          setTimeout(() => {
+            if (alertMsg) alertMsg.style.display = "none";
+          }, 5000);
 
-        btnCapa.className = "ag-btn ag-btn-disabled";
-        control_btn_add_layer = false;
+          btnCapa.className = "ag-btn ag-btn-disabled";
+          control_btn_add_layer = false;
+        } catch (errBtn) {
+          console.error("Error al procesar botón Agregar Capa:", errBtn);
+          new UserMessage(`Error al agregar capa: ${errBtn.message || errBtn}`, true, "error");
+        }
       }
     };
 
@@ -453,21 +464,48 @@ class UImf {
 
   zoomToLayer(layerId) {
     const lyr = (typeof addedLayers !== "undefined" ? addedLayers : []).find(
-      (l) => l.id === layerId
+      (l) => l && (l.id === layerId || l.name === layerId || l.file_name === layerId)
     );
-    if (lyr && lyr.layer && typeof mapa !== "undefined") {
+    if (!lyr) return;
+
+    if (lyr.layer && typeof mapa !== "undefined") {
       try {
+        if (typeof getGeoRasterBounds === "function") {
+          const rBounds = getGeoRasterBounds(lyr.layer);
+          if (rBounds) {
+            const bArr = Array.isArray(rBounds) ? rBounds : [
+              [rBounds.getSouth ? rBounds.getSouth() : rBounds._southWest.lat, rBounds.getWest ? rBounds.getWest() : rBounds._southWest.lng],
+              [rBounds.getNorth ? rBounds.getNorth() : rBounds._northEast.lat, rBounds.getEast ? rBounds.getEast() : rBounds._northEast.lng]
+            ];
+            try {
+              mapa.fitBounds(bArr, { maxZoom: 16, padding: [30, 30] });
+              return;
+            } catch (e) {
+              const cLat = (bArr[0][0] + bArr[1][0]) / 2;
+              const cLng = (bArr[0][1] + bArr[1][1]) / 2;
+              mapa.setView([cLat, cLng], 14);
+              return;
+            }
+          }
+        }
         if (typeof mapa.centerLayer === "function") {
           mapa.centerLayer(lyr.layer);
           return;
         }
+        if (lyr.layer.getBounds && typeof lyr.layer.getBounds === "function") {
+          const bounds = lyr.layer.getBounds();
+          if (bounds && bounds.isValid && bounds.isValid()) {
+            mapa.fitBounds(bounds, { maxZoom: 16 });
+            return;
+          }
+        }
         const bounds = L.geoJSON(lyr.layer).getBounds();
-        if (bounds && bounds.isValid()) {
+        if (bounds && bounds.isValid && bounds.isValid()) {
           mapa.fitBounds(bounds, { maxZoom: 16 });
           return;
         }
       } catch (err) {
-        console.warn("Error centrando en capa con GeoJSON:", err);
+        console.warn("Error centrando en capa:", err);
       }
     }
 
@@ -591,6 +629,17 @@ class UImf {
       btnDownload.innerHTML = '<i class="fas fa-download"></i>';
       btnDownload.onclick = (e) => {
         e.stopPropagation();
+        if ((lyr.type === "geotiff" || lyr.format === "tif" || lyr.format === "tiff") && lyr.file) {
+          if (typeof downloadBlob === "function") {
+            downloadBlob(lyr.file, lyr.file_name || `${lyr.name}.tif`);
+          } else {
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(lyr.file);
+            a.download = lyr.file_name || `${lyr.name}.tif`;
+            a.click();
+          }
+          return;
+        }
         if (typeof mapa !== "undefined" && typeof mapa.downloadMultiLayerGeoJSON === "function") {
           mapa.downloadMultiLayerGeoJSON(lyr.id, lyr.name, true);
         }
@@ -702,40 +751,113 @@ function addLayersfromFiles() {
   let sectionName, typeName, counter;
 
   currentLayers.forEach((e) => {
-    if (e.process) {
-      addProcessfromFiles(e, sectionName, typeName, counter);
-    } else {
-      (sectionName = "Archivos"), (typeName = "file");
+    try {
+      if (e.process) {
+        addProcessfromFiles(e, sectionName, typeName, counter);
+      } else {
+        (sectionName = "Archivos"), (typeName = "file");
 
-      addedLayers.push({
-        id: e.id,
-        layer: e.layer,
-        name: e.name,
-        file_name: e.file_name,
-        kb: e.kb,
-        isActive: true,
-        type: typeName,
-        section: sectionName,
-      });
-      let result = mapa.createLayerFromGeoJSON(e.layer, e.id);
-      addLayerToAllGroups(result, e.id);
+        const isGeoTIFF = (e.layerType === "geotiff" || (e.layer && (e.layer.type === "geotiff" || (typeof GeoRasterLayer !== "undefined" && e.layer instanceof GeoRasterLayer))));
 
-      menu_ui.addFileLayer(
-        sectionName,
-        typeName,
-        e.name,
-        e.id,
-        e.file_name,
-        true,
-      );
-      updateNumberofLayers(sectionName);
-      $("#item_uf_" + e.id).remove();
+        addedLayers.push({
+          id: e.id,
+          layer: e.layer,
+          name: e.name,
+          file_name: e.file_name,
+          file: e.file,
+          format: e.format,
+          kb: e.kb,
+          isActive: true,
+          type: isGeoTIFF ? "geotiff" : typeName,
+          section: sectionName,
+        });
+
+        if (isGeoTIFF) {
+          e.layer.id = e.id;
+          e.layer.name = e.id;
+          e.layer._uneditable = true;
+
+          try {
+            if (typeof mapa !== "undefined" && mapa && typeof e.layer.addTo === "function") {
+              e.layer.addTo(mapa);
+            }
+          } catch (errAdd) {
+            console.warn("No se pudo agregar GeoTIFF directamente al mapa:", errAdd);
+          }
+
+          try {
+            if (typeof drawnItems !== "undefined" && drawnItems && typeof drawnItems.addLayer === "function") {
+              drawnItems.addLayer(e.layer);
+            }
+          } catch (errDrawn) {
+            console.warn("No se pudo agregar GeoTIFF a drawnItems:", errDrawn);
+          }
+
+          if (mapa.groupLayers[e.id] === undefined) {
+            mapa.groupLayers[e.id] = [];
+          }
+          mapa.groupLayers[e.id].push(e.id);
+
+          try {
+            const rBounds = typeof getGeoRasterBounds === "function" ? getGeoRasterBounds(e.layer) : null;
+            if (rBounds) {
+              const bArr = Array.isArray(rBounds) ? rBounds : [
+                [rBounds.getSouth ? rBounds.getSouth() : rBounds._southWest.lat, rBounds.getWest ? rBounds.getWest() : rBounds._southWest.lng],
+                [rBounds.getNorth ? rBounds.getNorth() : rBounds._northEast.lat, rBounds.getEast ? rBounds.getEast() : rBounds._northEast.lng]
+              ];
+              try {
+                mapa.fitBounds(bArr, { maxZoom: 16, padding: [30, 30] });
+              } catch (e) {
+                const cLat = (bArr[0][0] + bArr[1][0]) / 2;
+                const cLng = (bArr[0][1] + bArr[1][1]) / 2;
+                mapa.setView([cLat, cLng], 14);
+              }
+            } else if (e.layer.getBounds && typeof e.layer.getBounds === "function") {
+              const bounds = e.layer.getBounds();
+              if (bounds && bounds.isValid && bounds.isValid()) {
+                mapa.fitBounds(bounds, { maxZoom: 16 });
+              }
+            }
+          } catch (boundsErr) {
+            console.warn("No se pudo calcular getBounds() automático para GeoTIFF:", boundsErr);
+          }
+        } else {
+          let result = mapa.createLayerFromGeoJSON(e.layer, e.id);
+          addLayerToAllGroups(result, e.id);
+        }
+
+        try {
+          menu_ui.addFileLayer(
+            sectionName,
+            isGeoTIFF ? "geotiff" : typeName,
+            e.name,
+            e.id,
+            e.file_name,
+            true,
+          );
+        } catch (menuErr) {
+          console.warn("Error agregando capa al menú UI:", menuErr);
+        }
+
+        try {
+          updateNumberofLayers(sectionName);
+        } catch (numErr) {}
+
+        $("#item_uf_" + e.id).remove();
+      }
+    } catch (layerErr) {
+      console.error("Error al procesar capa en addLayersfromFiles:", layerErr);
+      new UserMessage(`No se pudo agregar la capa ${e.name}: ${layerErr.message || layerErr}`, true, "error");
     }
   });
   currentLayers = [];
-  showTotalNumberofLayers();
+  try {
+    showTotalNumberofLayers();
+  } catch (e) {}
   if (typeof uimodalfs !== "undefined" && typeof uimodalfs.renderAddedLayers === "function") {
-    uimodalfs.renderAddedLayers();
+    try {
+      uimodalfs.renderAddedLayers();
+    } catch (e) {}
   }
 }
 

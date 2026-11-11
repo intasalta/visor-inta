@@ -769,8 +769,29 @@ class Geoprocessing {
         }
         $("#drawPolygonBtn").removeClass("ag-btn-disabled");
         $("#drawRectangleBtn").removeClass("ag-btn-disabled");
+
+        let areaInfo = "";
+        try {
+          if (typeof turf !== "undefined") {
+            let poly = null;
+            if (this.clipLayerInstance && typeof this.clipLayerInstance.getClipPolygonTurf === "function") {
+              poly = this.clipLayerInstance.getClipPolygonTurf(drawnShape);
+            } else if (typeof drawnShape.toGeoJSON === "function") {
+              poly = drawnShape.toGeoJSON();
+            }
+            if (poly) {
+              const areaKm2 = turf.area(poly) / 1000000;
+              if (areaKm2 > 2500) {
+                areaInfo = ` (Área: <b style="color:#d9534f;">${areaKm2.toFixed(1)} km²</b> - máx. ráster 2.500 km²)`;
+              } else {
+                areaInfo = ` (Área: <b>${areaKm2.toFixed(1)} km²</b>)`;
+              }
+            }
+          }
+        } catch (e) {}
+
         $("#msgClipStatus")
-          .html("Polígono de corte listo. Puede ejecutar el recorte.")
+          .html("Polígono de corte listo." + areaInfo + " Puede ejecutar el recorte.")
           .removeClass("hidden")
           .css("color", "green");
       }
@@ -786,7 +807,7 @@ class Geoprocessing {
   }
 
   checkLayersForClip() {
-    let hasVectorLayer = false;
+    let hasLayer = false;
     const select = document.getElementById("select-capa");
 
     // If select is empty, try to populate from gestorMenu.activeLayers directly
@@ -799,10 +820,15 @@ class Geoprocessing {
         if (typeof gestorMenu.layerIsWmts === "function" && gestorMenu.layerIsWmts(layerName)) return;
         let isRaster = false;
         try {
-          const ld = gestorMenu.getLayerData(layerName);
-          if (ld && ld.capa && ld.capa.tipo === "raster") isRaster = true;
+          if (typeof IClipLayer !== "undefined" && typeof IClipLayer.isRasterName === "function") {
+            isRaster = IClipLayer.isRasterName(layerName);
+          } else {
+            const ld = gestorMenu.getLayerData(layerName);
+            if (ld && ld.capa && ld.capa.tipo === "raster") isRaster = true;
+          }
         } catch (e) {}
-        if (!isRaster && !existingValues.has(layerName)) {
+
+        if (!existingValues.has(layerName)) {
           let title = layerName;
           try {
             const ld = gestorMenu.getLayerData(layerName);
@@ -810,7 +836,7 @@ class Geoprocessing {
           } catch (e) {}
           const opt = document.createElement("option");
           opt.value = layerName;
-          opt.text = title;
+          opt.text = title + (isRaster && !title.includes("[Ráster]") ? " [Ráster]" : "");
           select.appendChild(opt);
           existingValues.add(layerName);
         }
@@ -844,14 +870,22 @@ class Geoprocessing {
     }
 
     if (select && select.options && select.options.length > 1) {
-      hasVectorLayer = true;
+      hasLayer = true;
       // Auto-select the first real layer if nothing is selected
       if (!select.value || select.selectedIndex <= 0) {
         select.selectedIndex = 1;
       }
+      // Actualizar opciones de formato para la capa seleccionada
+      if (this.clipLayerInstance && typeof this.clipLayerInstance.onLayerSelectionChange === "function") {
+        this.clipLayerInstance.onLayerSelectionChange(select.value);
+      }
+    } else {
+      if (this.clipLayerInstance && typeof this.clipLayerInstance.onLayerSelectionChange === "function") {
+        this.clipLayerInstance.onLayerSelectionChange("");
+      }
     }
 
-    if (hasVectorLayer) {
+    if (hasLayer) {
       $("#msgNoVectorLayer").addClass("hidden");
       $("#drawPolygonBtn").removeClass("ag-btn-disabled");
       $("#drawRectangleBtn").removeClass("ag-btn-disabled");
@@ -963,9 +997,8 @@ class Geoprocessing {
       document.getElementsByClassName("form")[1].appendChild(clipStatusMsg);
 
       let msgNoVectorLayer = document.createElement("div");
-      msgNoVectorLayer.innerHTML = "No hay capas vectoriales activas. Active una capa en el menú de capas.";
+      msgNoVectorLayer.innerHTML = "No hay capas activas para recortar. Active una capa en el menú de capas.";
       msgNoVectorLayer.id = "msgNoVectorLayer";
-      msgNoVectorLayer.style = "color: #d9534f; font-weight: bold; margin: 10px 0;";
       document.getElementsByClassName("form")[1].appendChild(msgNoVectorLayer);
 
       this.checkLayersForClip();
@@ -1050,23 +1083,24 @@ class Geoprocessing {
                   if (layer && gestorMenu.layerIsWmts(layer.name) == false) {
                     let isRaster = false;
                     try {
-                      const ld = gestorMenu.getLayerData(layer.name);
-                      if (ld && ld.capa && ld.capa.tipo === "raster") isRaster = true;
+                      if (typeof IClipLayer !== "undefined" && typeof IClipLayer.isRasterName === "function") {
+                        isRaster = IClipLayer.isRasterName(layer.name);
+                      } else {
+                        isRaster = /(^|:|_)(mnc_|a__\d\d_|erosion_|geonode__\d\d_|precipitacion_|indice_aridez_|mapa_cos_|balanceh|saltajujuy_ip_|deficit)/i.test(layer.name);
+                      }
                     } catch (e) {}
-                    if (!isRaster) {
-                      try {
-                        const ld = gestorMenu.getLayerData(layer.name);
-                        layerTitle = (ld && ld.title) ? ld.title : layer.name;
-                      } catch (e) {
-                        layerTitle = layer.name;
-                      }
-                      if (!addedLayerNames.has(layer.name)) {
-                        addedLayerNames.add(layer.name);
-                        options.push({
-                          value: layer.name,
-                          text: layerTitle,
-                        });
-                      }
+                    try {
+                      const ld = gestorMenu.getLayerData(layer.name);
+                      layerTitle = (ld && ld.title) ? ld.title : layer.name;
+                    } catch (e) {
+                      layerTitle = layer.name;
+                    }
+                    if (!addedLayerNames.has(layer.name)) {
+                      addedLayerNames.add(layer.name);
+                      options.push({
+                        value: layer.name,
+                        text: layerTitle + (isRaster ? " [Ráster]" : ""),
+                      });
                     }
                   }
                 });
@@ -1078,17 +1112,20 @@ class Geoprocessing {
                     if (typeof gestorMenu.layerIsWmts === "function" && gestorMenu.layerIsWmts(layerName)) return;
                     let isRaster = false;
                     try {
-                      const ld = gestorMenu.getLayerData(layerName);
-                      if (ld && ld.capa && ld.capa.tipo === "raster") isRaster = true;
+                      if (typeof IClipLayer !== "undefined" && typeof IClipLayer.isRasterName === "function") {
+                        isRaster = IClipLayer.isRasterName(layerName);
+                      } else {
+                        isRaster = /(^|:|_)(0[1-9]|1[0-2])_p_ep|(^|:|_)(0[1-9]|1[0-2])_pp|(^|:|_)(0[1-9]|1[0-3])_tempera|(^|:|_)(04pp|05_pp_clip|precipitacion_anual|p_ep_balanceh|balanceh|indice_aridez)|mnc_|texclass_|lccs_|ire_|a__\d\d_|erosion_|geonode__\d\d_|mapa_cos_|saltajujuy_ip_|deficit|temperatura|evapotranspiracion|dem_|mde_/i.test(layerName);
+                      }
                     } catch (e) {}
-                    if (!isRaster && !addedLayerNames.has(layerName)) {
+                    if (!addedLayerNames.has(layerName)) {
                       addedLayerNames.add(layerName);
                       let title = layerName;
                       try {
                         const ld = gestorMenu.getLayerData(layerName);
                         if (ld && ld.title) title = ld.title;
                       } catch (e) {}
-                      options.push({ value: layerName, text: title });
+                      options.push({ value: layerName, text: title + (isRaster ? " [Ráster]" : "") });
                     }
                   });
                 }
@@ -1131,6 +1168,9 @@ class Geoprocessing {
               events: {
                 change: (element) => {
                   if (this.geoprocessId === "clipLayer") {
+                    if (this.clipLayerInstance && typeof this.clipLayerInstance.onLayerSelectionChange === "function") {
+                      this.clipLayerInstance.onLayerSelectionChange(element.value);
+                    }
                     this.checkLayersForClip();
                   } else if (this.geoprocessId === "contour") {
                     if (!element.value) return;
@@ -1515,12 +1555,21 @@ class Geoprocessing {
           if (this.geoprocessId == "clipLayer") {
             setTimeout(() => {
               let select = document.getElementById("select-capa");
-              if (select && select.options.length > 1) {
+              if (select && select.options.length > 1 && (!select.value || select.selectedIndex <= 0)) {
                 select.selectedIndex = 1;
-                $(select).change();
+              }
+              if (select) {
+                $(select).off("change.clipFormats").on("change.clipFormats", () => {
+                  if (this.clipLayerInstance && typeof this.clipLayerInstance.onLayerSelectionChange === "function") {
+                    this.clipLayerInstance.onLayerSelectionChange(select.value);
+                  }
+                });
+                if (select.value && this.clipLayerInstance && typeof this.clipLayerInstance.onLayerSelectionChange === "function") {
+                  this.clipLayerInstance.onLayerSelectionChange(select.value);
+                }
               }
               this.checkLayersForClip();
-            }, 300);
+            }, 60);
           }
           if (this.geoprocessId !== "waterRise") {
             this.resetHeightLayerColor();
@@ -1548,6 +1597,16 @@ class Geoprocessing {
             );
           }
           this.buildOptionForm(this.geoprocessing.getFields());
+          if (this.geoprocessId === "clipLayer") {
+            const selectEl = document.getElementById("select-capa");
+            if (selectEl && selectEl.options && selectEl.options.length > 1 && (!selectEl.value || selectEl.selectedIndex <= 0)) {
+              selectEl.selectedIndex = 1;
+            }
+            if (selectEl && selectEl.value && this.clipLayerInstance) {
+              this.clipLayerInstance.onLayerSelectionChange(selectEl.value);
+            }
+            this.checkLayersForClip();
+          }
           //this.namePrefix = item.namePrefix;
         },
       },
@@ -1650,16 +1709,22 @@ class Geoprocessing {
     if (select && this.geoprocessId === "clipLayer") {
       let isRaster = false;
       try {
-        const ld = gestorMenu.getLayerData(layerName);
-        if (ld && ld.capa && ld.capa.tipo === "raster") isRaster = true;
+        if (typeof IClipLayer !== "undefined" && typeof IClipLayer.isRasterName === "function") {
+          isRaster = IClipLayer.isRasterName(layerName);
+        } else {
+          isRaster = /(^|:|_)(0[1-9]|1[0-2])_p_ep|(^|:|_)(0[1-9]|1[0-2])_pp|(^|:|_)(0[1-9]|1[0-3])_tempera|(^|:|_)(04pp|05_pp_clip|precipitacion_anual|p_ep_balanceh|balanceh|indice_aridez)|mnc_|texclass_|lccs_|ire_|a__\d\d_|erosion_|geonode__\d\d_|mapa_cos_|saltajujuy_ip_|deficit|temperatura|evapotranspiracion|dem_|mde_/i.test(layerName);
+        }
       } catch (e) {}
       const isWmts = typeof gestorMenu !== "undefined" && typeof gestorMenu.layerIsWmts === "function" ? gestorMenu.layerIsWmts(layerName) : false;
-      if (addToList && !isWmts && !isRaster) {
+      if (addToList && !isWmts) {
         let exists = false;
         for (let i = 0; i < select.length; i++) {
           if (select[i].value === layerName) exists = true;
         }
         if (!exists && option.innerHTML !== "undefined") {
+          if (isRaster && !option.innerHTML.includes("[Ráster]")) {
+            option.innerHTML += " [Ráster]";
+          }
           select.appendChild(option);
           this.checkLayersForClip();
         }
