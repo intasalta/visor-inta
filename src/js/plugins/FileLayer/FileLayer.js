@@ -43,12 +43,12 @@
     }
 
     getGeoJSON(){
-        // we assume that zip is the format for shapefile
-        if(this.format == 'zip'){
+        // we assume that zip is the format for shapefile, and tif/tiff for GeoTIFF
+        if(this.format == 'zip' || this.format == 'tif' || this.format == 'tiff' || this.layerType == 'geotiff'){
             return this.layer;
         }
 
-        return this.layer.toGeoJSON();
+        return (this.layer && typeof this.layer.toGeoJSON === 'function') ? this.layer.toGeoJSON() : this.layer;
     }
 
     getFileSize(measure){
@@ -67,7 +67,7 @@
 
             this.file = file;
             this.fileName = file.name;
-            this.format = file.name.split(".").pop();
+            this.format = file.name.split(".").pop().toLowerCase();
             this.fileSize = file.size;
             this.id = this.format + (''+new Date().getTime()).substr(8);
             // Fetch the file
@@ -97,9 +97,9 @@
     }
 
     /**
-     * Converts different data to the expected format and returns a geoJSON
-     * @param {String} data from response
-     * @returns a geoJSON object
+     * Converts different data to the expected format and returns a geoJSON or GeoRasterLayer
+     * @param {String|ArrayBuffer} data from response
+     * @returns a geoJSON object or Leaflet Layer
      */
     getGeojson(data){
         return new Promise((resolve,reject)=>{
@@ -113,6 +113,83 @@
                     }).catch(()=>{
                         reject(`El archivo ${this.fileName} no pudo ser procesado, verifíquelo e intente nuevamente.`)
                     })
+                    break;
+                case 'tif':
+                case 'tiff':
+                    this.layerType = 'geotiff';
+                    const ensureGeoRasterLibs = async () => {
+                        if (typeof parseGeoraster === 'function' && typeof GeoRasterLayer === 'function') {
+                            return true;
+                        }
+                        // Esperar a que Leaflet (window.L) esté disponible si aún está cargando
+                        if (typeof L === 'undefined') {
+                            await new Promise((res) => {
+                                let attempts = 0;
+                                const timer = setInterval(() => {
+                                    attempts++;
+                                    if (typeof L !== 'undefined' || attempts > 30) {
+                                        clearInterval(timer);
+                                        res();
+                                    }
+                                }, 100);
+                            });
+                        }
+                        // Cargar parseGeoraster si no estuviera disponible
+                        if (typeof parseGeoraster !== 'function') {
+                            await new Promise((res) => {
+                                const s = document.createElement('script');
+                                s.src = 'src/js/plugins/FileLayer/georaster/georaster.browser.bundle.min.js';
+                                s.onload = res;
+                                s.onerror = res;
+                                document.head.appendChild(s);
+                            });
+                        }
+                        // Cargar GeoRasterLayer si no estuviera disponible
+                        if (typeof GeoRasterLayer !== 'function') {
+                            await new Promise((res) => {
+                                const s = document.createElement('script');
+                                s.src = 'src/js/plugins/FileLayer/georaster/georaster-layer-for-leaflet.min.js';
+                                s.onload = res;
+                                s.onerror = res;
+                                document.head.appendChild(s);
+                            });
+                        }
+                        return typeof parseGeoraster === 'function' && typeof GeoRasterLayer === 'function';
+                    };
+
+                    ensureGeoRasterLibs().then((ready) => {
+                        if (!ready) {
+                            return reject('Las librerías de lectura GeoTIFF no se pudieron inicializar en el navegador.');
+                        }
+                        if (typeof registerArgentineProjections === 'function') {
+                            try { registerArgentineProjections(); } catch (e) {}
+                        }
+                        return parseGeoraster(data).then((georaster) => {
+                            try {
+                                if (typeof registerArgentineProjections === 'function') {
+                                    try { registerArgentineProjections(); } catch (e) {}
+                                }
+                                const rasterLayer = new GeoRasterLayer({
+                                    georaster: georaster,
+                                    opacity: 0.85,
+                                    resolution: 256
+                                });
+                                rasterLayer.type = 'geotiff';
+                                rasterLayer._uneditable = true;
+                                rasterLayer.georaster = georaster;
+                                this.layer = rasterLayer;
+                                resolve(rasterLayer);
+                            } catch (err) {
+                                console.error("Error al renderizar GeoRasterLayer:", err);
+                                reject(`No se pudo renderizar el archivo GeoTIFF ${this.fileName}: ${err.message || err}`);
+                            }
+                        }).catch((err) => {
+                            console.error("GeoTIFF parse error:", err);
+                            reject(`El archivo GeoTIFF ${this.fileName} no pudo ser procesado. Verifique que sea un ráster georreferenciado válido.`);
+                        });
+                    }).catch((err) => {
+                        reject(`Error cargando librerías GeoTIFF: ${err.message || err}`);
+                    });
                     break;
                 case 'json':
                 case 'geojson':
@@ -142,9 +219,11 @@
             }
 
             // Se comprueba que layer haya sido resuelto y que disponga de layers
-            if(layer == null || Object.keys(layer._layers).length == 0){
+            if(this.layerType !== 'geotiff' && (layer == null || Object.keys(layer._layers || {}).length == 0)){
                 reject(`El archivo ${this.fileName} no pudo ser procesado, verifíquelo e intente nuevamente.`);
-            }else {resolve(layer)}
+            }else if (layer != null) {
+                resolve(layer);
+            }
         })
     }
 
@@ -192,7 +271,9 @@
             'kml':'text',
             'json':'json',
             'geojson':'json',
-            'zip':'arrayBuffer'
+            'zip':'arrayBuffer',
+            'tif':'arrayBuffer',
+            'tiff':'arrayBuffer'
         };
 
         return responseType[this.format];
