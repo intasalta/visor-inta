@@ -25,6 +25,7 @@
 
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.6.0/leaflet.css" integrity="sha384-eS4bw6aEvhCSXWGP85ANR/N8isWKzT7P36NvcuTJGkrj6wsbxLVpXslrNXYHyseD" crossorigin="anonymous" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.6.0/leaflet.js"></script>
 
   <!-- Better scale css -->
   <link rel="stylesheet" href="https://daniellsu.github.io/leaflet-betterscale/L.Control.BetterScale.css" integrity="sha384-2KDD1OkPWCaNMKkFrolRvmL1nQcNLQsqSlOueaVJK4uqJrmUBnsRRT952dh/UEFU" crossorigin="anonymous" />
@@ -81,6 +82,9 @@
   <link href="src/js/components/context-menu/context-menu.css" rel="stylesheet" />
   <link href="src/js/components/user-message/user-message.css" rel="stylesheet" />
   <link href="src/js/components/pdfPrinter/pdfPrinter.css" rel="stylesheet" />
+  <link href="src/js/components/attributeSearch/attributeSearch.css" rel="stylesheet" />
+  <link href="src/js/components/coordinateLocator/coordinateLocator.css" rel="stylesheet" />
+  <link href="src/js/components/boxZoom/boxZoom.css" rel="stylesheet" />
   <link href="src/js/components/consultData/consultData.css" rel="stylesheet" />
   <link href="src/js/components/about/about.css" rel="stylesheet" />
   <link href="src/js/components/login/login.css" rel="stylesheet" />
@@ -106,6 +110,9 @@
   <script src="src/js/components/UI/UserInterface.js"></script>
   <script src="src/js/components/about/about.js"></script>
   <script src="src/js/components/geoprocessing/IClipLayer.js"></script>
+  <script src="src/js/components/attributeSearch/attributeSearch.js"></script>
+  <script src="src/js/components/coordinateLocator/coordinateLocator.js"></script>
+  <script src="src/js/components/boxZoom/boxZoom.js"></script>
 
   <!-- Leaflet EditableLabel -->
   <link rel="stylesheet" href="src/js/map/plugins/leaflet/leaflet-editable-label/Leaflet.EditableLabel.css" />
@@ -130,6 +137,8 @@
   <!-- FileLayer and dependencies -->
   <script src="src/js/plugins/FileLayer/omnivore/omnivore.min.js"></script>
   <script src="src/js/plugins/FileLayer/shapefile/shp.min.js"></script>
+  <script src="src/js/plugins/FileLayer/georaster/georaster.browser.bundle.min.js"></script>
+  <script src="src/js/plugins/FileLayer/georaster/georaster-layer-for-leaflet.min.js"></script>
   <script src="src/js/plugins/FileLayer/FileLayer.js"></script>
 
   <!-- ServiceLayer and dependencies -->
@@ -141,6 +150,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/3.0.1/jspdf.umd.min.js"></script>
 <!-- html2canvas CDN -->
 <script src="src/js/plugins/html2canvas/html2canvas.min.js"></script>
+<!-- JSZip para compresión de descargas ráster y estilos SLD -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 
 <body>
