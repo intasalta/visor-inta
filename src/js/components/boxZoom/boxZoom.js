@@ -58,9 +58,19 @@ class BoxZoomTool {
     `;
     elemOut.ondblclick = (e) => e.stopPropagation();
 
-    // Agregar ambos botones al contenedor con su espaciado natural de Leaflet
-    container.appendChild(elemIn);
-    container.appendChild(elemOut);
+    // Insertar después de coordinateLocator o measure si ya existen
+    const coordElem = container.querySelector("#coordinateLocator");
+    const measureElem = container.querySelector(".leaflet-control-measure");
+    if (coordElem) {
+      coordElem.after(elemIn);
+      elemIn.after(elemOut);
+    } else if (measureElem) {
+      measureElem.after(elemIn);
+      elemIn.after(elemOut);
+    } else {
+      container.appendChild(elemIn);
+      container.appendChild(elemOut);
+    }
 
     this.elemIn = elemIn;
     this.elemOut = elemOut;

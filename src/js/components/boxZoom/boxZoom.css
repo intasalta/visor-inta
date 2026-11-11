@@ -1,4 +1,4 @@
-﻿/* =========================================================
+/* =========================================================
    Estilos de la Herramienta de Zoom por Ventana (GEOINTA)
    ========================================================= */
 
@@ -9,11 +9,27 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
-  line-height: 30px;
   color: #333333;
   transition: all 0.15s ease;
+}
+
+#boxZoomIn i,
+#boxZoomOut i {
+  font-size: 15px;
+  color: #333333;
+}
+
+#boxZoomIn a:hover i {
+  color: var(--primary-color, #157DB9);
+}
+
+#boxZoomOut a:hover i {
+  color: #0284c7;
+}
+
+#boxZoomIn a.active i,
+#boxZoomOut a.active i {
+  color: #ffffff !important;
 }
 
 #boxZoomIn a:hover {

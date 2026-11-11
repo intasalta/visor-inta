@@ -45,8 +45,13 @@ class CoordinateLocator {
       e.stopPropagation();
     };
 
-    // Insertar después del botón de medir o cuadrícula si existen, o al final
-    container.appendChild(elem);
+    // Insertar después de medir si ya existe en el contenedor, o al final
+    const measureElem = container.querySelector(".leaflet-control-measure");
+    if (measureElem) {
+      measureElem.after(elem);
+    } else {
+      container.appendChild(elem);
+    }
   }
 
   /**
