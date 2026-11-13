@@ -664,7 +664,15 @@
         "geonode:usos_suelo",
         "geonode:usos_suelo_cordoba",
         "geonode:usos_suelo_6511e8948865c3b29c69ae43a693425f",
-        "geonode:usos_suelo_9e6f51615512d46688438e0677d11892"
+        "geonode:usos_suelo_9e6f51615512d46688438e0677d11892",
+        "geonode:usos_suelo_0aeca28b7461084c2cae3fc110e941b6",
+        "geonode:usos_suelo_64306899e6feb969cabc38452205f7d3",
+        "geonode:usos_suelo_a078b733d4f3acaa4596a28d99c59e3e",
+        "geonode:usos_suelo_d279846e21ea81bc1a720559ebb3f92c",
+        "geonode:usos_suelo_0876959e232780783dfbc8a446546049",
+        "geonode:usos_suelo_7d940d22dfdde92d4ee6f14902c3482e",
+        "geonode:usos_suelo_ba40a4e1e687cf2e2da640274fe3a505",
+        "geonode:usos_suelo_6c623bfa25a44f2673d050f5faa4bf64"
       ],
       "style_titles": {
         "geonode:usos_suelo": "Uso primario del suelo — Santa Fe",
@@ -680,7 +688,28 @@
         "Uso secundario del suelo — Santa Cruz": "Uso Secundario Del Suelo — Santa Cruz",
         "geonode:usos_suelo_9e6f51615512d46688438e0677d11892": "Uso primario del suelo — Corrientes",
         "usos_suelo_9e6f51615512d46688438e0677d11892": "Uso primario del suelo — Corrientes",
-        "Uso secundario del suelo — Corrientes": "Uso Secundario Del Suelo — Corrientes"
+        "Uso secundario del suelo — Corrientes": "Uso Secundario Del Suelo — Corrientes",
+        "geonode:usos_suelo_0aeca28b7461084c2cae3fc110e941b6": "Uso primario del suelo",
+        "usos_suelo_0aeca28b7461084c2cae3fc110e941b6": "Uso primario del suelo",
+        "Uso secundario del suelo — Formosa": "Uso Secundario Del Suelo",
+        "geonode:usos_suelo_64306899e6feb969cabc38452205f7d3": "Uso primario del suelo",
+        "usos_suelo_64306899e6feb969cabc38452205f7d3": "Uso primario del suelo",
+        "Uso secundario del suelo — Santiago del Estero": "Uso Secundario Del Suelo",
+        "geonode:usos_suelo_d279846e21ea81bc1a720559ebb3f92c": "Uso primario del suelo",
+        "usos_suelo_d279846e21ea81bc1a720559ebb3f92c": "Uso primario del suelo",
+        "Uso secundario del suelo — Mendoza": "Uso Secundario Del Suelo",
+        "geonode:usos_suelo_0876959e232780783dfbc8a446546049": "Uso primario del suelo",
+        "usos_suelo_0876959e232780783dfbc8a446546049": "Uso primario del suelo",
+        "Uso secundario del suelo — Jujuy": "Uso Secundario Del Suelo",
+        "geonode:usos_suelo_7d940d22dfdde92d4ee6f14902c3482e": "Uso primario del suelo",
+        "usos_suelo_7d940d22dfdde92d4ee6f14902c3482e": "Uso primario del suelo",
+        "Uso secundario del suelo — Neuquen": "Uso secundario del suelo",
+        "geonode:usos_suelo_ba40a4e1e687cf2e2da640274fe3a505": "Uso primario del suelo",
+        "usos_suelo_ba40a4e1e687cf2e2da640274fe3a505": "Uso primario del suelo",
+        "Uso secundario del suelo — Rio Negro": "Uso secundario del suelo",
+        "geonode:usos_suelo_6c623bfa25a44f2673d050f5faa4bf64": "Uso primario del suelo",
+        "usos_suelo_6c623bfa25a44f2673d050f5faa4bf64": "Uso primario del suelo",
+        "Uso secundario del suelo — Chaco": "Uso Secundario Del Suelo"
       }
     },
     {
