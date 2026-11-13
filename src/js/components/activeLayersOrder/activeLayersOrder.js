@@ -112,8 +112,6 @@ class ActiveLayersOrder {
       if (this.isPanelOpen()) {
         this.render();
       }
-      // Re-aplicar el orden de capas en el mapa para garantizar que los polígonos/puntos queden sobre los rásters
-      this.applyLayerOrder(this.activeOrder);
     };
 
     // 1. Hooking indestructible con Object.defineProperty sobre gestorMenu.activeLayersHasBeenUpdated
@@ -1483,8 +1481,10 @@ class ActiveLayersOrder {
       });
 
       // 3. Reordenar los subLayers en cada WMS Source para que GeoServer renderice en orden exacto (fondo a cima)
+      // SOLO refrescar el overlay si el orden interno de capas en WMS realmente cambió
       sourcesMap.forEach((layersForSource, src) => {
         if (src._subLayers) {
+          const oldKeys = Object.keys(src._subLayers).join(",");
           const newSubLayers = {};
           // En WMS LAYERS=a,b -> 'a' es fondo, 'b' es cima
           layersForSource.forEach((lyrName) => {
@@ -1496,11 +1496,15 @@ class ActiveLayersOrder {
               newSubLayers[k] = src._subLayers[k];
             }
           }
-          src._subLayers = newSubLayers;
-          if (typeof src.refreshOverlay === "function") {
-            src.refreshOverlay();
-          } else if (typeof src.update === "function") {
-            src.update();
+          const newKeys = Object.keys(newSubLayers).join(",");
+
+          if (oldKeys !== newKeys) {
+            src._subLayers = newSubLayers;
+            if (typeof src.refreshOverlay === "function") {
+              src.refreshOverlay();
+            } else if (typeof src.update === "function") {
+              src.update();
+            }
           }
         }
       });
