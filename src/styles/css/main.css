@@ -1576,9 +1576,7 @@ input:checked.switch+label:after {
 }
 
 @media (max-height: 600px) {
-  .leaflet-bottom:not(.leaflet-control-scale) {
-    display: none;
-  }
+  /* .leaflet-bottom:not(.leaflet-control-scale) removido para mantener visibles controles inferiores (Acerca de ID GEO y botones de zoom) al hacer zoom en el navegador */
 
   .leaflet-control-scale {
     margin-left: 5px !important;
@@ -1636,7 +1634,7 @@ input:checked.switch+label:after {
   }
 }
 
-@media (max-height: 550px) {
+@media (max-height: 350px) {
   .leaflet-control-minimap {
     display: none;
   }
