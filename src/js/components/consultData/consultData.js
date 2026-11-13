@@ -177,11 +177,6 @@ function getPopupForWMS(isActive) {
       }
     });
   }
-
-  // Garantizar que el orden de superposición de Capas Activas (ej. polígonos sobre ráster) se mantenga intacto
-  if (window.activeLayersOrderInstance && typeof window.activeLayersOrderInstance.applyLayerOrder === "function") {
-    window.activeLayersOrderInstance.applyLayerOrder(window.activeLayersOrderInstance.activeOrder);
-  }
 }
 
 /**
