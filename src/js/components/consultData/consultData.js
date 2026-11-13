@@ -150,7 +150,7 @@ function getPopupForWMS(isActive) {
     if (gestorMenu.layerIsWmts(item.nombre)) {
       // Handle WMTS layers
       toggleLayerPopup(item, isActive, "lyrJoin");
-    } else if (item.capas[1]) {
+    } else if (item.capas && item.capas[1]) {
       // Handle double WMS layers
       toggleLayerPopup(item, isActive, "lyrJoin");
     } else {
@@ -160,41 +160,58 @@ function getPopupForWMS(isActive) {
   });
 
   // Handle imported WMS layers
-  addedLayers.forEach((lyr) => {
-    if (lyr.type === "WMS" && lyr.isActive) {
-      const importedWMS = lyr.layer;
-      overlayMaps[importedWMS.name].removeFrom(mapa);
-      delete overlayMaps[importedWMS.name];
+  if (typeof addedLayers !== "undefined" && Array.isArray(addedLayers)) {
+    addedLayers.forEach((lyr) => {
+      if (lyr.type === "WMS" && lyr.isActive && lyr.layer) {
+        const importedWMS = lyr.layer;
+        const targetLyr = overlayMaps ? overlayMaps[importedWMS.name] : null;
+        if (targetLyr && targetLyr._source) {
+          targetLyr._source.options.identify = isActive;
+          if (typeof mapa !== "undefined" && mapa) {
+            mapa.off("click", targetLyr._source.identify, targetLyr._source);
+            if (isActive) {
+              mapa.on("click", targetLyr._source.identify, targetLyr._source);
+            }
+          }
+        }
+      }
+    });
+  }
 
-      createImportWmsLayer(importedWMS);
-      overlayMaps[importedWMS.name]._source.options.identify = isActive;
-      overlayMaps[importedWMS.name].addTo(mapa);
-    }
-  });
+  // Garantizar que el orden de superposición de Capas Activas (ej. polígonos sobre ráster) se mantenga intacto
+  if (window.activeLayersOrderInstance && typeof window.activeLayersOrderInstance.applyLayerOrder === "function") {
+    window.activeLayersOrderInstance.applyLayerOrder(window.activeLayersOrderInstance.activeOrder);
+  }
 }
 
 /**
- * Toggles the popup functionality for a given layer based on its type.
+ * Toggles the popup functionality for a given layer based on its type sin destruir ni remover capas del mapa.
+ * Preserva intacto el orden z-index (polígonos sobre rásters), opacidades y caché de teselas.
  * @param {Object} item - The layer item containing layer information.
  * @param {boolean} isActive - Indicates whether to enable or disable the popup functionality.
  * @param {string} lyrType - The type of layer (either "lyrJoin" or "singleLyr").
  */
 function toggleLayerPopup(item, isActive, lyrType) {
-  const layerName = lyrType === "lyrJoin" ? item.capas[1].nombre : item.capa.nombre;
+  const layerName = lyrType === "lyrJoin" 
+    ? (item.capas && item.capas[1] ? item.capas[1].nombre : item.nombre) 
+    : (item.capa ? item.capa.nombre : item.nombre);
 
-  if (overlayMaps[layerName]) {
-    overlayMaps[layerName].removeFrom(mapa);
-    delete overlayMaps[layerName];
-  }
+  const lyr = overlayMaps ? overlayMaps[layerName] : null;
+  if (!lyr) return;
 
-  if (lyrType === "lyrJoin") {
-    createWmsLayer(item.capas[1]);
+  const src = lyr._source;
+  if (src) {
+    src.options.identify = isActive;
+    if (typeof mapa !== "undefined" && mapa) {
+      mapa.off("click", src.identify, src);
+      if (isActive) {
+        mapa.on("click", src.identify, src);
+      }
+    }
   } else {
-    createWmsLayer(item);
+    lyr.options = lyr.options || {};
+    lyr.options.identify = isActive;
   }
-
-  overlayMaps[layerName]._source.options.identify = isActive;
-  overlayMaps[layerName].addTo(mapa);
 }
 
 function createImportWmsLayer(layer) {

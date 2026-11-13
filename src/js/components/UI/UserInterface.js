@@ -17,7 +17,8 @@ class AboutUsModal {
     aboutHeader.className = "about-header";
 
     const aboutLogo = document.createElement("img");
-    aboutLogo.src = "src/styles/images/argenmap-banner.webp";
+    aboutLogo.src = "src/styles/images/intageo.png";
+    aboutLogo.alt = "ID GEO";
     aboutLogo.className = "about-logo";
 
     const aboutExitBtn = document.createElement("a");

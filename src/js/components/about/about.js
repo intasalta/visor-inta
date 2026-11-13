@@ -164,24 +164,37 @@ class AboutUs {
    */
   addReadmeContent() {
     const innerReadmeText = document.createElement("div");
-    innerReadmeText.style.margin = "10px";
+    innerReadmeText.style.margin = "15px 20px";
+    innerReadmeText.style.lineHeight = "1.5";
+    innerReadmeText.style.textAlign = "justify";
 
-    this.dataGetter
-      .loadMD(
-        `${window.location.origin + window.location.pathname}/README.md`,
-        4,
-        7,
-      )
-      .then((selectedText) => {
-        innerReadmeText.innerHTML = selectedText;
-      });
+    innerReadmeText.innerHTML = `
+      <h3 style="margin-top: 0; color: var(--primary-color, #157DB9); text-align: center;">INTA Digital GEO (ID GEO)</h3>
+      <p>
+        <strong>ID GEO</strong> es el visor geoespacial del <strong>Instituto Nacional de Tecnología Agropecuaria (INTA)</strong>, desarrollado para centralizar, visualizar y consultar la información geográfica producida por los distintos nodos y estaciones experimentales del INTA distribuidos en todo el territorio nacional.
+      </p>
+      <p>
+        Este desarrollo toma como base tecnológica la plataforma de código abierto <strong>Argenmap</strong> creada por el <strong>Instituto Geográfico Nacional (IGN)</strong>, incorporando extensiones analíticas, geoprocesos, herramientas avanzadas de consulta y adaptaciones específicas para el sector agropecuario, los recursos naturales y el ordenamiento territorial.
+      </p>
+      <h4 style="margin-bottom: 5px; color: var(--primary-color, #157DB9);">Funcionalidades y mejoras incorporadas:</h4>
+      <ul style="margin-top: 5px; padding-left: 20px;">
+        <li><strong>Capas activas y orden de superposición:</strong> panel interactivo con arrastrar y soltar (Drag & Drop), control de opacidad rápida, ocultamiento temporal, leyendas dinámicas y badge contador en tiempo real.</li>
+        <li><strong>Búsqueda avanzada por atributos:</strong> constructor de filtros lógicos múltiples (AND / OR), opción de búsqueda en "Todos los campos", filtros espaciales (toda la capa, vista actual o recuadro dibujado), resaltado con auto-zoom y descarga directa en KML o GeoJSON.</li>
+        <li><strong>Localizador por coordenadas (GMS / Decimal):</strong> herramienta en barra superior para posicionar puntos ingresando Grados, Minutos, Segundos o Grados Decimales, con auto-zoom y ficha informativa.</li>
+        <li><strong>Zoom por ventana (+ y -):</strong> acercamiento y alejamiento dinámico trazando recuadros directamente sobre el mapa.</li>
+        <li><strong>Módulo de impresión y exportación a PDF:</strong> panel con vista previa interactiva, títulos personalizados, orientación vertical/horizontal sin franjas blancas y escala cartográfica precisa.</li>
+        <li><strong>Medición de distancias y áreas:</strong> control ubicado a la izquierda de la barra superior para una experiencia de usuario estable sin desplazamiento de botones.</li>
+        <li><strong>Consulta interactiva (Popups):</strong> identificación rápida de atributos para capas WMS, WFS y vectoriales locales.</li>
+        <li><strong>Mapas base satelitales e híbridos:</strong> integración de capas base de alta resolución para análisis territorial integral.</li>
+      </ul>
+    `;
 
     let readmeContainer = document.getElementById("readme-container");
     readmeContainer.prepend(innerReadmeText);
 
     let linkRepo = document.getElementById("link-to-repo");
     linkRepo.addEventListener("click", () => {
-      this.goTo("https://github.com/ign-argentina/argenmap");
+      this.goTo("https://github.com/intasalta/visor-inta");
     });
   }
 

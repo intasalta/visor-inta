@@ -1,19 +1,29 @@
 /**
- * Represents a class that handles the visibility toggling of map tools buttons.
- * @class
+ * Control de visualización y ordenamiento de barras de herramientas de Leaflet (IDESA / GEOINTA).
+ * Mantiene la disposición exacta y estable:
+ * - Columna vertical derecha (.leaflet-top.leaflet-right):
+ *     1. Llave inglesa (#hideBtnLeft, 'Esconder herramientas')
+ *     2. Lapicito (#hideBtnRight, 'Esconder herramientas de dibujo')
+ *     3. Barra de dibujo de Leaflet Draw
+ * - Fila horizontal superior (.leaflet-top.leaflet-left):
+ *     1. Medir distancias/áreas (.leaflet-control-measure)
+ *     2. Localizar coordenadas (#coordinateLocator)
+ *     3. Zoom Ventana (+) (#boxZoomIn)
+ *     4. Zoom Ventana (-) (#boxZoomOut)
+ *     5. Cuadrícula (.leaflet-control-customgraticule)
+ *     6. Pantalla completa (#fullscreen)
+ *     7. Captura (#screenShoter)
+ *     8. Imprimir PDF (#pdfPrinter)
+ *     9. Consultar datos (#consultData)
  */
 class ToolbarVisibilityToggler {
   constructor() {
     window.toolbarVisibilityToggler = this;
+    this.isSyncing = false;
   }
 
   /**
-   * Creates a button element and prepends/appends it to the right side of the map.
-   *
-   * @param {string} id - The ID of the button element.
-   * @param {string} btnId - The ID of the parent div element.
-   * @param {string} title - The title attribute of the button element.
-   * @param {string} iconClass - The CSS class for the icon element.
+   * Crea o asegura un botón en la barra vertical derecha (.leaflet-top.leaflet-right).
    */
   createBtn(id, btnId, title, iconClass) {
     let elem = document.getElementById(btnId);
@@ -22,74 +32,99 @@ class ToolbarVisibilityToggler {
       elem.className = "leaflet-bar leaflet-control";
       elem.id = btnId;
       elem.title = title;
-      elem.style = "cursor: pointer;";
+      elem.style.cursor = "pointer";
 
       const elemIcon = document.createElement("a");
       elemIcon.id = id;
+      elemIcon.setAttribute("role", "button");
+      elemIcon.setAttribute("tabindex", "0");
+      elemIcon.setAttribute("aria-label", title);
       elemIcon.innerHTML = `<span id="map-toolbar-span" class="${iconClass}" aria-hidden="true"></span>`;
       elem.appendChild(elemIcon);
 
-      // Event listener to toggle visibility of map buttons on click
       elem.addEventListener("click", (e) => {
-        e.stopPropagation(); // Prevent click event propagation
-        const btnToolId =
-          elem.id === "hideBtnRight"
+        e.stopPropagation();
+        const targetContainerSelector =
+          btnId === "hideBtnRight"
             ? ".leaflet-top.leaflet-right"
             : ".leaflet-top.leaflet-left";
-        const btnTool = document.querySelector(btnToolId);
-        if (btnTool) {
-          this.toggleToolbarVisibility(btnTool);
+        const targetContainer = document.querySelector(targetContainerSelector);
+        if (targetContainer) {
+          this.toggleToolbarVisibility(targetContainer);
         }
       });
 
-      // Event listener to prevent zoom on double-click
       elem.addEventListener("dblclick", (e) => {
-        e.stopPropagation(); // Prevent double-click event propagation
+        e.stopPropagation();
       });
     }
 
-    const container = document.querySelector(".leaflet-top.leaflet-right");
-    if (container) {
-      if (btnId === "hideBtnLeft") {
-        container.prepend(elem);
-      } else if (btnId === "hideBtnRight") {
-        const leftBtn = document.getElementById("hideBtnLeft");
-        if (leftBtn && leftBtn.parentNode === container) {
-          leftBtn.after(elem);
-        } else {
-          container.prepend(elem);
-        }
-      } else {
-        container.appendChild(elem);
-      }
+    const rightContainer = document.querySelector(".leaflet-top.leaflet-right");
+    if (rightContainer && elem.parentElement !== rightContainer) {
+      rightContainer.appendChild(elem);
     }
   }
 
   /**
-   * Asegura que los botones 'hideBtnLeft' y 'hideBtnRight' se mantengan siempre arriba.
+   * Asegura que en la columna derecha (.leaflet-top.leaflet-right):
+   * 1º lugar: hideBtnLeft (Llave inglesa)
+   * 2º lugar: hideBtnRight (Lapicito)
+   * 3º lugar en adelante: Barra de dibujo (Leaflet Draw)
    */
-  ensureTopPosition() {
-    const container = document.querySelector(".leaflet-top.leaflet-right");
+  ensureRightTopPosition() {
+    const rightContainer = document.querySelector(".leaflet-top.leaflet-right");
+    if (!rightContainer) return;
+
     const leftBtn = document.getElementById("hideBtnLeft");
     const rightBtn = document.getElementById("hideBtnRight");
-    if (container && leftBtn) {
-      if (container.firstElementChild !== leftBtn) {
-        container.prepend(leftBtn);
+
+    if (leftBtn) {
+      if (leftBtn.parentElement !== rightContainer) {
+        rightContainer.prepend(leftBtn);
+      } else if (rightContainer.firstElementChild !== leftBtn) {
+        rightContainer.prepend(leftBtn);
       }
-      if (rightBtn && leftBtn.nextElementSibling !== rightBtn) {
-        leftBtn.after(rightBtn);
+    }
+
+    if (rightBtn) {
+      if (rightBtn.parentElement !== rightContainer) {
+        if (leftBtn && leftBtn.parentElement === rightContainer) {
+          leftBtn.after(rightBtn);
+        } else {
+          rightContainer.prepend(rightBtn);
+        }
+      } else if (leftBtn && leftBtn.parentElement === rightContainer) {
+        if (leftBtn.nextElementSibling !== rightBtn) {
+          leftBtn.after(rightBtn);
+        }
       }
     }
   }
 
   /**
-   * Ordena los botones de la barra superior horizontal (.leaflet-top.leaflet-left).
-   * Coloca 'Medir distancia' a la izquierda de todos, seguido de Localizar por coordenadas,
-   * Zoom Ventana (+ y -), y el resto de herramientas para evitar desplazamientos bruscos.
+   * Asegura el orden exacto de los botones en la barra horizontal (.leaflet-top.leaflet-left):
+   * 1. Medir distancias/áreas (.leaflet-control-measure)
+   * 2. Localizar coordenadas (#coordinateLocator)
+   * 3. Zoom Ventana (+) (#boxZoomIn)
+   * 4. Zoom Ventana (-) (#boxZoomOut)
+   * 5. Cuadrícula (.leaflet-control-customgraticule)
+   * 6. Pantalla completa (#fullscreen)
+   * 7. Captura (#screenShoter)
+   * 8. Imprimir PDF (#pdfPrinter)
+   * 9. Consultar datos (#consultData)
    */
   orderLeftToolbar() {
-    const container = document.querySelector(".leaflet-top.leaflet-left");
-    if (!container) return;
+    const leftContainer = document.querySelector(".leaflet-top.leaflet-left");
+    if (!leftContainer) return;
+
+    // Rescatar si hideBtnLeft o hideBtnRight cayeron por error en el contenedor izquierdo
+    const rightContainer = document.querySelector(".leaflet-top.leaflet-right");
+    ["hideBtnLeft", "hideBtnRight"].forEach((bId) => {
+      const b = document.getElementById(bId);
+      if (b && b.parentElement === leftContainer && rightContainer) {
+        rightContainer.appendChild(b);
+      }
+    });
 
     const desiredSelectors = [
       ".leaflet-control-measure",
@@ -101,15 +136,16 @@ class ToolbarVisibilityToggler {
       "#screenShoter",
       "#pdfPrinter",
       "#consultData",
+      "#loadLayersButton",
     ];
 
     let prevElem = null;
     desiredSelectors.forEach((sel) => {
-      const el = container.querySelector(sel);
+      const el = leftContainer.querySelector(sel);
       if (el) {
         if (prevElem === null) {
-          if (container.firstElementChild !== el) {
-            container.prepend(el);
+          if (leftContainer.firstElementChild !== el) {
+            leftContainer.prepend(el);
           }
         } else {
           if (prevElem.nextElementSibling !== el) {
@@ -122,40 +158,63 @@ class ToolbarVisibilityToggler {
   }
 
   /**
-   * Toggles the visibility of the child nodes of the selected maps buttons.
-   * @param {HTMLElement} btnTool - The button tool element.
+   * Sincroniza ambas barras evitando bucles de reentrada.
+   */
+  syncAll() {
+    if (this.isSyncing) return;
+    this.isSyncing = true;
+    try {
+      this.ensureRightTopPosition();
+      this.orderLeftToolbar();
+    } finally {
+      setTimeout(() => {
+        this.isSyncing = false;
+      }, 30);
+    }
+  }
+
+  /**
+   * Alterna la visibilidad de los controles dependientes.
+   * Si se pulsa la llave inglesa (hideBtnLeft): oculta/muestra los botones horizontales (.leaflet-top.leaflet-left).
+   * Si se pulsa el lápiz (hideBtnRight): oculta/muestra la barra de dibujo (.leaflet-top.leaflet-right).
    */
   toggleToolbarVisibility(btnTool) {
     if (!btnTool) return;
+    let anyVisible = false;
     btnTool.childNodes.forEach((node) => {
-      // Toggle visibility for nodes that are not "hideBtnRight" or "hideBtnLeft"
       if (node.nodeType === 1 && node.id !== "hideBtnRight" && node.id !== "hideBtnLeft") {
-        node.hidden = !node.hidden;
+        if (!node.hidden && node.style.display !== "none") {
+          anyVisible = true;
+        }
+      }
+    });
+
+    const shouldHide = anyVisible;
+    btnTool.childNodes.forEach((node) => {
+      if (node.nodeType === 1 && node.id !== "hideBtnRight" && node.id !== "hideBtnLeft") {
+        node.hidden = shouldHide;
+        node.style.display = shouldHide ? "none" : "";
       }
     });
   }
 
   /**
-   * Hides or shows the toolbar based on the provided parameter.
-   * @param {HTMLElement} toolbar - The toolbar element.
-   * @param {boolean} show - Whether to show or hide the toolbar.
+   * Oculta o muestra una barra según el parámetro booleano.
    */
   hideToolbar(toolbar, show) {
     if (!toolbar) return;
     toolbar.childNodes.forEach((node) => {
       if (node.nodeType === 1 && node.id !== "hideBtnRight" && node.id !== "hideBtnLeft") {
         node.hidden = !show;
+        node.style.display = !show ? "none" : "";
       }
     });
   }
 
   /**
-   * Creates the component.
-   * This method creates two buttons for the map toolbar and sets the initial visibility of the toolbars.
-   * @param {boolean} showToolbar - A boolean value to show the toolbar.
+   * Inicializa el componente y los observadores automáticos para estabilidad continua.
    */
   createComponent(showToolbar) {
-    // Create the toolbar buttons
     this.createBtn(
       "map-toolbar-icon-left",
       "hideBtnLeft",
@@ -169,46 +228,39 @@ class ToolbarVisibilityToggler {
       "bx bxs-pencil",
     );
 
-    const container = document.querySelector(".leaflet-top.leaflet-right");
-    if (container && window.MutationObserver) {
-      const observer = new MutationObserver(() => {
-        this.ensureTopPosition();
-      });
-      observer.observe(container, { childList: true });
-    }
+    const observeContainer = (selector) => {
+      const el = document.querySelector(selector);
+      if (el && window.MutationObserver) {
+        const observer = new MutationObserver(() => {
+          this.syncAll();
+        });
+        observer.observe(el, { childList: true });
+      }
+    };
 
-    const leftContainer = document.querySelector(".leaflet-top.leaflet-left");
-    if (leftContainer && window.MutationObserver) {
-      let isOrdering = false;
-      const leftObserver = new MutationObserver(() => {
-        if (isOrdering) return;
-        isOrdering = true;
-        this.orderLeftToolbar();
-        setTimeout(() => {
-          isOrdering = false;
-        }, 60);
-      });
-      leftObserver.observe(leftContainer, { childList: true });
-    }
+    observeContainer(".leaflet-top.leaflet-right");
+    observeContainer(".leaflet-top.leaflet-left");
 
-    const applyInitial = () => {
-      this.ensureTopPosition();
-      this.orderLeftToolbar();
+    const apply = () => {
+      this.syncAll();
       const rightToolbar = document.querySelector(".leaflet-top.leaflet-right");
       const leftToolbar = document.querySelector(".leaflet-top.leaflet-left");
-
-      if (rightToolbar) this.hideToolbar(rightToolbar, showToolbar);
-      if (leftToolbar) this.hideToolbar(leftToolbar, showToolbar);
+      if (rightToolbar && typeof showToolbar === "boolean" && !showToolbar) {
+        this.hideToolbar(rightToolbar, showToolbar);
+      }
+      if (leftToolbar && typeof showToolbar === "boolean" && !showToolbar) {
+        this.hideToolbar(leftToolbar, showToolbar);
+      }
     };
 
     if (document.readyState === "complete") {
-      applyInitial();
+      apply();
     } else {
-      window.addEventListener("load", applyInitial);
+      window.addEventListener("load", apply);
     }
-    setTimeout(applyInitial, 200);
-    setTimeout(applyInitial, 800);
-    setTimeout(applyInitial, 1800);
-    setTimeout(applyInitial, 3000);
+
+    [100, 300, 600, 1000, 1800, 2800, 4000].forEach((ms) => {
+      setTimeout(apply, ms);
+    });
   }
 }
