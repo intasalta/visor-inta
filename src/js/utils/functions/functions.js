@@ -1468,7 +1468,7 @@ function loadDeveloperLogo() {
       link.style.cursor = "pointer";
       let img = L.DomUtil.create("img");
       img.src = "src/styles/images/noimage.webp";
-      img.alt = "Argenmap logo";
+      img.alt = "ID GEO logo";
       img.classList = "brand";
       img.style = devLogoStyle;
       img.style.backgroundImage = `url('${devLogoUrl}')`;

@@ -41,7 +41,7 @@ const STRINGS = {
   delete_geometry: "Delete geometry",
   url_required: "URL parameter is required",
   no_bbox: "Invalid or empty bounding box",
-  about: "Acerca de Argenmap",
+  about: "Acerca de ID GEO",
 };
 
 //Default Services Values
