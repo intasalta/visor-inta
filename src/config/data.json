@@ -672,7 +672,10 @@
         "geonode:usos_suelo_0876959e232780783dfbc8a446546049",
         "geonode:usos_suelo_7d940d22dfdde92d4ee6f14902c3482e",
         "geonode:usos_suelo_ba40a4e1e687cf2e2da640274fe3a505",
-        "geonode:usos_suelo_6c623bfa25a44f2673d050f5faa4bf64"
+        "geonode:usos_suelo_6c623bfa25a44f2673d050f5faa4bf64",
+        "geonode:usos_suelo_e8dd40a326728c378a16b0aaf3e85173",
+        "geonode:usos_suelo_e94ab92c9b1701409f0469074a645880",
+        "geonode:usos_suelo_a77b6f1ffef756c5823cdf43fee92efb"
       ],
       "style_titles": {
         "geonode:usos_suelo": "Uso primario del suelo — Santa Fe",
@@ -709,7 +712,16 @@
         "Uso secundario del suelo — Rio Negro": "Uso secundario del suelo",
         "geonode:usos_suelo_6c623bfa25a44f2673d050f5faa4bf64": "Uso primario del suelo",
         "usos_suelo_6c623bfa25a44f2673d050f5faa4bf64": "Uso primario del suelo",
-        "Uso secundario del suelo — Chaco": "Uso Secundario Del Suelo"
+        "Uso secundario del suelo — Chaco": "Uso Secundario Del Suelo",
+        "geonode:usos_suelo_e8dd40a326728c378a16b0aaf3e85173": "Uso primario del suelo",
+        "usos_suelo_e8dd40a326728c378a16b0aaf3e85173": "Uso primario del suelo",
+        "Uso secundario del suelo — Salta": "Uso Secundario Del Suelo",
+        "geonode:usos_suelo_e94ab92c9b1701409f0469074a645880": "Uso primario del suelo",
+        "usos_suelo_e94ab92c9b1701409f0469074a645880": "Uso primario del suelo",
+        "Uso secundario del suelo — Tucuman": "Uso secundario del suelo",
+        "geonode:usos_suelo_a77b6f1ffef756c5823cdf43fee92efb": "Uso primario del suelo",
+        "usos_suelo_a77b6f1ffef756c5823cdf43fee92efb": "Uso primario del suelo",
+        "Uso secundario del suelo — Entre Rios": "Uso secundario del suelo"
       }
     },
     {
