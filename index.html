@@ -10,10 +10,10 @@
   <meta name="keywords" content="mapas, geografía, Argentina, visor de mapas, información geográfica" />
   <meta name="author" content="INTA" />
   <title>IDGEO</title>
-  <link rel="icon" href="https://s3.inta.gob.ar/logos/favicon.ico"" type="image/x-icon" />
+  <link rel="icon" href="https://s3.inta.gob.ar/logos/favicon.ico" type="image/x-icon" />
 
-  <!-- Bootstrap core CSS -->
-  <link rel="stylesheet" href="https://getbootstrap.com/docs/3.3/dist/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous" />
+  <!-- Bootstrap core CSS (Alojado localmente para máxima seguridad y sin dependencia de CDN) -->
+  <link rel="stylesheet" href="dist/css/bootstrap.min.css" />
 
   <link rel="stylesheet" href="src/js/plugins/jquery/ui/jquery-ui.min.css" />
 
@@ -88,7 +88,6 @@
   <link href="src/js/components/activeLayersOrder/activeLayersOrder.css" rel="stylesheet" />
   <link href="src/js/components/consultData/consultData.css" rel="stylesheet" />
   <link href="src/js/components/about/about.css" rel="stylesheet" />
-  <link href="src/js/components/login/login.css" rel="stylesheet" />
   <link rel="stylesheet" href="src/js/components/table/table.css" />
   <link rel="stylesheet" href="src/js/components/accessibility/accessibility.css">
 
@@ -106,7 +105,6 @@
   <script src="src/js/components/user-message/user-message.js"></script>
   <script src="src/js/app.js"></script>
   <script src="src/js/components/styles/styles.js"></script>
-  <script src="src/js/components/login/login.js"></script>
   <script src="src/js/components/toolbar/toolbar.js"></script>
   <script src="src/js/components/UI/UserInterface.js"></script>
   <script src="src/js/components/about/about.js"></script>
@@ -119,8 +117,6 @@
   <!-- Leaflet EditableLabel -->
   <link rel="stylesheet" href="src/js/map/plugins/leaflet/leaflet-editable-label/Leaflet.EditableLabel.css" />
   <script src="src/js/map/plugins/leaflet/leaflet-editable-label/Leaflet.EditableLabel.js"></script>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/2.0.0/marked.min.js"></script>
 
   <!--tabulator-->
   <link rel="stylesheet" href="src/js/plugins/tabulator/tabulator.min.css" />
@@ -162,7 +158,7 @@
       <div class="row center-flex">
         <div class="col-xs-6 col-sm-8 col-md-8 start-flex">
           <div id="logo-navbar" class="navbar-content">
-            <a id="top-left-logo-link" href="#" title="Logo" target="_blank" aria-label="Logo">
+            <a id="top-left-logo-link" href="#" title="Logo" target="_blank" rel="noopener noreferrer" aria-label="Logo">
               <img id="top-left-logo" src="src/styles/images/noimage.webp" alt="Logo" title="Logo" />
             </a>
             <a id="logoText" aria-label="Texto del logo"></a>
@@ -175,7 +171,7 @@
 
         <div id="logo-help" class="navbar-new-content">
           <span class="xxsmall-hide">
-            <a id="top-right-logo-link" href="#" title="Logo" target="_blank" aria-label="Logo">
+            <a id="top-right-logo-link" href="#" title="Logo" target="_blank" rel="noopener noreferrer" aria-label="Logo">
               <img id="top-right-logo" src="src/styles/images/noimage.webp" alt="Logo" title="Logo" />
             </a>
           </span>
@@ -220,10 +216,9 @@
   </div>
 
   <div id="mapa" class="main"></div>
-  <!-- LOGIN SCRIPT -->
-  <div id="login-wrapper" class="justify-content-center"></div>
-  <!-- Bootstrap -->
-  <script src="https://getbootstrap.com/docs/3.3/dist/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+  <!-- Bootstrap (Alojado localmente) -->
+  <script src="dist/js/bootstrap.min.js"></script>
 
   <!-- LOADER PARA DESCARGAS -->
 <!-- LOADER SPINNER DESCARGA -->
